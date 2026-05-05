@@ -3,33 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Cadastro de Funcionários</title>
+    <title>Sistema de Cadastro de Funcionários - Santa Branca</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
 </head>
 <body class="bg-gray-100 p-8">
     <div class="max-w-7xl mx-auto">
-        <div class="bg-white rounded-lg shadow p-4 mb-6 flex justify-between items-center">
-            <div>
-                <h1 class="text-2xl font-bold">📋 Sistema de Cadastro de Funcionários</h1>
-                <p class="text-sm text-gray-600">Bem-vindo, <span id="nomeUsuario"></span></p>
-                <p class="text-xs text-blue-600" id="statusAdmin"></p>
-            </div>
-            <div class="flex gap-2">
-                <button id="btnExportarExcel" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">📊 Exportar Excel</button>
-                <button id="btnLogout" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">Sair</button>
+        <div class="bg-white rounded-lg shadow p-4 mb-6">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center gap-6">
+                    <div>
+                        <h1 class="text-2xl font-bold">📋 Sistema de Cadastro de Funcionários</h1>
+                        <p class="text-sm text-gray-600">Bem-vindo, <span id="nomeUsuario"></span></p>
+                        <p class="text-xs text-blue-600" id="statusAdmin"></p>
+                    </div>
+                    <img id="logoSantaBranca" 
+                         src="https://ndvgduxdebeiyujfrups.supabase.co/storage/v1/object/public/imagens/Santa%20Branca%20Logo.png"
+                         alt="Santa Branca Logo" 
+                         class="h-16 w-auto object-contain">
+                </div>
+                <div class="flex gap-2">
+                    <button id="btnExportarExcel" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">📊 Exportar Excel</button>
+                    <button id="btnLogout" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">Sair</button>
+                </div>
             </div>
         </div>
 
+        <!-- Botões de navegação -->
         <div class="flex gap-2 mb-6">
-            <button id="btnAbaCadastro" class="bg-blue-500 text-white px-6 py-3 rounded-lg font-semibold">➕ NOVO CADASTRO</button>
-            <button id="btnAbaBusca" class="bg-gray-400 text-white px-6 py-3 rounded-lg font-semibold">🔍 BUSCAR FUNCIONÁRIOS</button>
+            <button id="btnAbaBusca" class="bg-blue-500 text-white px-6 py-3 rounded-lg font-semibold">🔍 BUSCAR FUNCIONÁRIOS</button>
+            <button id="btnAbaCadastro" class="bg-gray-400 text-white px-6 py-3 rounded-lg font-semibold">➕ NOVO CADASTRO</button>
             <button id="btnAbaUsuarios" class="bg-gray-400 text-white px-6 py-3 rounded-lg font-semibold" style="display:none;">👥 GERENCIAR USUÁRIOS</button>
         </div>
 
         <!-- CADASTRO -->
-        <div id="abaCadastro">
+        <div id="abaCadastro" style="display: none;">
             <div class="bg-white rounded-lg shadow p-6">
                 <h2 class="text-xl font-semibold mb-4">➕ Cadastrar Novo Funcionário</h2>
                 <form id="formFuncionario" class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -43,17 +52,31 @@
                     <div><label class="block text-sm font-medium mb-1">Data de Nascimento</label><input type="date" id="dataNascimento" class="w-full border p-2 rounded"></div>
                     <div><label class="block text-sm font-medium mb-1">Local Atual de Trabalho e Função</label><input type="text" id="localTrabalho" class="w-full border p-2 rounded"></div>
                     <div><label class="block text-sm font-medium mb-1">Cor/Raça</label><select id="corRaca" class="w-full border p-2 rounded"><option value="">Selecione</option><option>Branca</option><option>Preta</option><option>Parda</option><option>Amarela</option><option>Indígena</option></select></div>
-                    <div><label class="block text-sm font-medium mb-1">Foto (link)</label><input type="url" id="foto" class="w-full border p-2 rounded"></div>
+                    <div><label class="block text-sm font-medium mb-1">Foto do Funcionário</label>
+                        <div class="flex gap-2 items-center">
+                            <input type="file" id="uploadFoto" accept="image/*" class="flex-1 border p-2 rounded">
+                            <button type="button" id="btnUploadFoto" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">📤 Upload</button>
+                        </div>
+                        <input type="hidden" id="foto" class="w-full border p-2 rounded">
+                        <div id="previewFoto" class="mt-2 hidden">
+                            <img id="previewImagem" class="h-20 w-20 object-cover rounded-full">
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1">Clique em Upload para enviar a foto</p>
+                    </div>
                     <div><label class="block text-sm font-medium mb-1">E-mail</label><input type="email" id="email" class="w-full border p-2 rounded"></div>
                     <div><label class="block text-sm font-medium mb-1">Laudo de Restrição</label><select id="laudoRestricao" class="w-full border p-2 rounded"><option value="">Selecione</option><option>Sim</option><option>Não</option><option>Em análise</option></select></div>
                     <div><label class="block text-sm font-medium mb-1">Cargo/Situação</label><select id="cargoSituacao" class="w-full border p-2 rounded"><option value="">Selecione</option><option>Efetivo</option><option>Comissionado</option><option>Contratado</option><option>Estagiário</option><option>Temporário</option><option>Afastado</option></select></div>
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium mb-1">Observações</label>
+                        <textarea id="observacoes" rows="3" class="w-full border p-2 rounded" placeholder="Informações adicionais sobre o funcionário..."></textarea>
+                    </div>
                     <button type="submit" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 md:col-span-2">💾 SALVAR CADASTRO</button>
                 </form>
             </div>
         </div>
 
         <!-- BUSCA -->
-        <div id="abaBusca" style="display: none;">
+        <div id="abaBusca">
             <div class="bg-white rounded-lg shadow p-6">
                 <h2 class="text-xl font-semibold mb-4">🔍 Buscar Funcionários</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -108,20 +131,26 @@
                 <div><label>Data Nascimento</label><input type="date" id="editDataNascimento" class="w-full border p-2 rounded"></div>
                 <div><label>Local Trabalho</label><input type="text" id="editLocalTrabalho" class="w-full border p-2 rounded"></div>
                 <div><label>Cor/Raça</label><select id="editCorRaca" class="w-full border p-2 rounded"><option value="">Selecione</option><option>Branca</option><option>Preta</option><option>Parda</option><option>Amarela</option><option>Indígena</option></select></div>
-                <div><label>Foto</label><input type="url" id="editFoto" class="w-full border p-2 rounded"></div>
+                <div><label>Foto</label><input type="text" id="editFoto" class="w-full border p-2 rounded" readonly placeholder="URL da foto gerada automaticamente"></div>
                 <div><label>E-mail</label><input type="email" id="editEmail" class="w-full border p-2 rounded"></div>
                 <div><label>Laudo Restrição</label><select id="editLaudoRestricao" class="w-full border p-2 rounded"><option value="">Selecione</option><option>Sim</option><option>Não</option><option>Em análise</option></select></div>
                 <div><label>Cargo/Situação</label><select id="editCargoSituacao" class="w-full border p-2 rounded"><option value="">Selecione</option><option>Efetivo</option><option>Comissionado</option><option>Contratado</option><option>Estagiário</option><option>Temporário</option><option>Afastado</option></select></div>
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium mb-1">Observações</label>
+                    <textarea id="editObservacoes" rows="3" class="w-full border p-2 rounded" placeholder="Informações adicionais sobre o funcionário..."></textarea>
+                </div>
                 <div class="md:col-span-2 flex gap-2 justify-end"><button type="button" onclick="fecharModalEdicao()" class="bg-gray-500 text-white px-4 py-2 rounded">Cancelar</button><button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">Salvar</button></div>
             </form>
         </div>
     </div>
 
-    <!-- MODAL DETALHES -->
+    <!-- MODAL DETALHES COM FOTO -->
     <div id="modalDetalhes" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
         <div class="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold">👤 Detalhes</h3><button onclick="fecharModal()" class="text-gray-500 text-2xl">&times;</button></div>
-            <div id="conteudoModal"></div>
+            <div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold">👤 Detalhes do Funcionário</h3><button onclick="fecharModal()" class="text-gray-500 text-2xl">&times;</button></div>
+            <div id="conteudoModal" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- A foto aparecerá aqui -->
+            </div>
         </div>
     </div>
 
@@ -170,7 +199,6 @@
         // Auth
         async function verificarAuth() {
             const { data: { session } } = await supabaseSistema.auth.getSession();
-            // === AJUSTADO: redireciona para index.html ===
             if (!session) { window.location.href = 'index.html'; return; }
             emailLogado = session.user.email;
             document.getElementById('nomeUsuario').innerHTML = emailLogado;
@@ -185,8 +213,56 @@
             }
         }
 
-        // === AJUSTADO: logout redireciona para index.html ===
         document.getElementById('btnLogout').onclick = async () => { await supabaseSistema.auth.signOut(); window.location.href = 'index.html'; };
+
+        // FUNÇÃO PARA UPLOAD DE FOTO
+        let arquivoSelecionado = null;
+
+        document.getElementById('uploadFoto').addEventListener('change', (e) => {
+            arquivoSelecionado = e.target.files[0];
+            if (arquivoSelecionado) {
+                const preview = document.getElementById('previewImagem');
+                const previewDiv = document.getElementById('previewFoto');
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    preview.src = e.target.result;
+                    previewDiv.classList.remove('hidden');
+                };
+                reader.readAsDataURL(arquivoSelecionado);
+            }
+        });
+
+        document.getElementById('btnUploadFoto').onclick = async () => {
+            if (!arquivoSelecionado) {
+                alert('Selecione uma foto primeiro!');
+                return;
+            }
+
+            const nomeCompleto = document.getElementById('nomeCompleto').value;
+            if (!nomeCompleto) {
+                alert('Preencha o Nome Completo antes de fazer o upload da foto!');
+                return;
+            }
+
+            const extensao = arquivoSelecionado.name.split('.').pop();
+            const nomeArquivo = `${nomeCompleto.replace(/[^a-z0-9]/gi, '_')}_${Date.now()}.${extensao}`;
+            
+            const { data, error } = await supabaseSistema.storage
+                .from('fotos_funcionarios')
+                .upload(nomeArquivo, arquivoSelecionado);
+
+            if (error) {
+                alert('Erro no upload: ' + error.message);
+                return;
+            }
+
+            const { data: urlData } = supabaseSistema.storage
+                .from('fotos_funcionarios')
+                .getPublicUrl(nomeArquivo);
+
+            document.getElementById('foto').value = urlData.publicUrl;
+            alert('✅ Foto enviada com sucesso!');
+        };
 
         // CADASTRO
         document.getElementById('formFuncionario').onsubmit = async (e) => {
@@ -205,16 +281,21 @@
                 "Foto (link da foto)": document.getElementById('foto').value || null,
                 "E-mail": document.getElementById('email').value || null,
                 "Laudo de Restrição": document.getElementById('laudoRestricao').value || null,
-                "Cargo/Situação": document.getElementById('cargoSituacao').value || null
+                "Cargo/Situação": document.getElementById('cargoSituacao').value || null,
+                "Observações": document.getElementById('observacoes').value || null
             };
             const { error } = await supabaseSistema.from('tblCadastro').insert([dados]);
             if (error) alert('❌ Erro: ' + error.message);
-            else { alert('✅ Cadastrado!'); document.getElementById('formFuncionario').reset(); }
+            else { 
+                alert('✅ Cadastrado!'); 
+                document.getElementById('formFuncionario').reset();
+                document.getElementById('previewFoto').classList.add('hidden');
+                arquivoSelecionado = null;
+            }
         };
 
         // FUNÇÃO PARA CARREGAR TODOS OS FUNCIONÁRIOS
         async function carregarTodosFuncionarios() {
-            console.log('Carregando todos os funcionários...');
             const { data, error } = await supabaseSistema
                 .from('tblCadastro')
                 .select('*')
@@ -222,11 +303,9 @@
             
             if (error) { 
                 alert('Erro: ' + error.message);
-                console.error(error);
                 return; 
             }
             
-            console.log('Dados carregados:', data);
             document.getElementById('totalResultados').innerHTML = data.length + ' funcionário(s)';
             
             if (data.length === 0) { 
@@ -239,10 +318,13 @@
                 const nomeEsc = (f['Nome Completo'] || '').replace(/'/g, "\\'");
                 html += `<div class="border rounded-lg p-4 hover:shadow">
                     <div class="flex justify-between items-start">
-                        <div>
-                            <h3 class="font-bold text-lg">${f['Nome Completo'] || '-'}</h3>
-                            <p class="text-gray-600">${f['Função'] || '-'} | ${f['Unidade Escolar'] || '-'}</p>
-                            <p class="text-sm text-gray-500">📧 ${f['E-mail'] || '-'} | 📱 ${f['Telefone para Contato'] || '-'}</p>
+                        <div class="flex gap-4">
+                            ${f['Foto (link da foto)'] ? `<img src="${f['Foto (link da foto)']}" class="h-16 w-16 object-cover rounded-full" onerror="this.style.display='none'">` : ''}
+                            <div>
+                                <h3 class="font-bold text-lg">${f['Nome Completo'] || '-'}</h3>
+                                <p class="text-gray-600">${f['Função'] || '-'} | ${f['Unidade Escolar'] || '-'}</p>
+                                <p class="text-sm text-gray-500">📧 ${f['E-mail'] || '-'} | 📱 ${f['Telefone para Contato'] || '-'}</p>
+                            </div>
                         </div>
                         <div class="flex gap-2">
                             <button onclick='verDetalhes("${nomeEsc}")' class="bg-blue-500 text-white px-3 py-1 rounded">Ver</button>
@@ -290,10 +372,13 @@
                 const nomeEsc = (f['Nome Completo'] || '').replace(/'/g, "\\'");
                 html += `<div class="border rounded-lg p-4 hover:shadow">
                     <div class="flex justify-between items-start">
-                        <div>
-                            <h3 class="font-bold text-lg">${f['Nome Completo'] || '-'}</h3>
-                            <p class="text-gray-600">${f['Função'] || '-'} | ${f['Unidade Escolar'] || '-'}</p>
-                            <p class="text-sm text-gray-500">📧 ${f['E-mail'] || '-'} | 📱 ${f['Telefone para Contato'] || '-'}</p>
+                        <div class="flex gap-4">
+                            ${f['Foto (link da foto)'] ? `<img src="${f['Foto (link da foto)']}" class="h-16 w-16 object-cover rounded-full" onerror="this.style.display='none'">` : ''}
+                            <div>
+                                <h3 class="font-bold text-lg">${f['Nome Completo'] || '-'}</h3>
+                                <p class="text-gray-600">${f['Função'] || '-'} | ${f['Unidade Escolar'] || '-'}</p>
+                                <p class="text-sm text-gray-500">📧 ${f['E-mail'] || '-'} | 📱 ${f['Telefone para Contato'] || '-'}</p>
+                            </div>
                         </div>
                         <div class="flex gap-2">
                             <button onclick='verDetalhes("${nomeEsc}")' class="bg-blue-500 text-white px-3 py-1 rounded">Ver</button>
@@ -305,6 +390,46 @@
             }
             document.getElementById('listaFuncionarios').innerHTML = html;
         }
+
+        // MODAL DETALHES COM FOTO EM DESTAQUE
+        window.verDetalhes = async function(nome) {
+            const { data } = await supabaseSistema.from('tblCadastro').select('*').eq('"Nome Completo"', nome).single();
+            if (!data) return;
+            
+            // Layout com foto em destaque na esquerda e informações na direita
+            let html = `
+                <div class="md:col-span-1 flex flex-col items-center">
+                    ${data['Foto (link da foto)'] ? 
+                        `<img src="${data['Foto (link da foto)']}" class="w-48 h-48 object-cover rounded-full border-4 border-blue-500 shadow-lg" onerror="this.src='https://via.placeholder.com/192?text=Sem+Foto'">` : 
+                        `<div class="w-48 h-48 bg-gray-200 rounded-full flex items-center justify-center border-4 border-gray-300">
+                            <span class="text-gray-400 text-center">📸<br>Sem foto</span>
+                         </div>`
+                    }
+                    <h3 class="text-xl font-bold mt-4 text-center">${data['Nome Completo'] || '-'}</h3>
+                    <p class="text-gray-600 text-center">${data['Função'] || '-'}</p>
+                </div>
+                <div class="md:col-span-2">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div class="bg-gray-50 p-3 rounded"><strong>Unidade Escolar:</strong><br>${data['Unidade Escolar'] || '-'}</div>
+                        <div class="bg-gray-50 p-3 rounded"><strong>Matrícula:</strong><br>${data['Matrícula'] || '-'}</div>
+                        <div class="bg-gray-50 p-3 rounded"><strong>Endereço:</strong><br>${data['Endereço'] || '-'}</div>
+                        <div class="bg-gray-50 p-3 rounded"><strong>Telefone Contato:</strong><br>${data['Telefone para Contato'] || '-'}</div>
+                        <div class="bg-gray-50 p-3 rounded"><strong>Telefone Emergência:</strong><br>${data['Telefone para Emergências'] || '-'}</div>
+                        <div class="bg-gray-50 p-3 rounded"><strong>Data Nascimento:</strong><br>${data['Data de Nascimento'] || '-'}</div>
+                        <div class="bg-gray-50 p-3 rounded"><strong>Local Trabalho:</strong><br>${data['Local Atual de Trabalho e Função'] || '-'}</div>
+                        <div class="bg-gray-50 p-3 rounded"><strong>Cor/Raça:</strong><br>${data['Cor/Raça'] || '-'}</div>
+                        <div class="bg-gray-50 p-3 rounded"><strong>E-mail:</strong><br>${data['E-mail'] || '-'}</div>
+                        <div class="bg-gray-50 p-3 rounded"><strong>Laudo Restrição:</strong><br>${data['Laudo de Restrição'] || '-'}</div>
+                        <div class="bg-gray-50 p-3 rounded"><strong>Cargo/Situação:</strong><br>${data['Cargo/Situação'] || '-'}</div>
+                        <div class="bg-gray-50 p-3 rounded md:col-span-2"><strong>Observações:</strong><br>${data['Observações'] || '-'}</div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('conteudoModal').innerHTML = html;
+            document.getElementById('modalDetalhes').classList.remove('hidden');
+            document.getElementById('modalDetalhes').classList.add('flex');
+        };
 
         // EDIÇÃO
         window.abrirEdicao = async function(nome) {
@@ -325,6 +450,7 @@
             document.getElementById('editEmail').value = data['E-mail'] || '';
             document.getElementById('editLaudoRestricao').value = data['Laudo de Restrição'] || '';
             document.getElementById('editCargoSituacao').value = data['Cargo/Situação'] || '';
+            document.getElementById('editObservacoes').value = data['Observações'] || '';
             document.getElementById('modalEdicao').classList.remove('hidden');
             document.getElementById('modalEdicao').classList.add('flex');
         };
@@ -346,7 +472,8 @@
                 "Foto (link da foto)": document.getElementById('editFoto').value || null,
                 "E-mail": document.getElementById('editEmail').value || null,
                 "Laudo de Restrição": document.getElementById('editLaudoRestricao').value || null,
-                "Cargo/Situação": document.getElementById('editCargoSituacao').value || null
+                "Cargo/Situação": document.getElementById('editCargoSituacao').value || null,
+                "Observações": document.getElementById('editObservacoes').value || null
             };
             const { error } = await supabaseSistema.from('tblCadastro').update(dados).eq('"Nome Completo"', nomeOriginal);
             if (error) alert('❌ Erro: ' + error.message);
@@ -357,20 +484,6 @@
             const modal = document.getElementById('modalEdicao');
             modal.classList.add('hidden');
             modal.classList.remove('flex');
-        };
-
-        // DETALHES
-        window.verDetalhes = async function(nome) {
-            const { data } = await supabaseSistema.from('tblCadastro').select('*').eq('"Nome Completo"', nome).single();
-            if (!data) return;
-            let html = '<div class="grid grid-cols-2 gap-3">';
-            for (const [key, value] of Object.entries(data)) {
-                html += `<div class="bg-gray-50 p-3 rounded"><strong>${key}:</strong><br>${value || '-'}</div>`;
-            }
-            html += '</div>';
-            document.getElementById('conteudoModal').innerHTML = html;
-            document.getElementById('modalDetalhes').classList.remove('hidden');
-            document.getElementById('modalDetalhes').classList.add('flex');
         };
 
         // EXCLUIR
