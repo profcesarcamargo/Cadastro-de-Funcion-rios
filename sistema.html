@@ -52,17 +52,30 @@
                     <div><label class="block text-sm font-medium mb-1">Data de Nascimento</label><input type="date" id="dataNascimento" class="w-full border p-2 rounded"></div>
                     <div><label class="block text-sm font-medium mb-1">Local Atual de Trabalho e Função</label><input type="text" id="localTrabalho" class="w-full border p-2 rounded"></div>
                     <div><label class="block text-sm font-medium mb-1">Cor/Raça</label><select id="corRaca" class="w-full border p-2 rounded"><option value="">Selecione</option><option>Branca</option><option>Preta</option><option>Parda</option><option>Amarela</option><option>Indígena</option></select></div>
-                    <div><label class="block text-sm font-medium mb-1">Foto do Funcionário</label>
-                        <div class="flex gap-2 items-center">
-                            <input type="file" id="uploadFoto" accept="image/*" class="flex-1 border p-2 rounded">
-                            <button type="button" id="btnUploadFoto" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">📤 Upload</button>
+                    
+                    <!-- CAMPO FOTO COM UPLOAD -->
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium mb-1">Foto do Funcionário</label>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <div class="flex gap-2 items-center">
+                                    <input type="file" id="uploadFoto" accept="image/*" class="flex-1 border p-2 rounded">
+                                    <button type="button" id="btnUploadFoto" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">📤 Upload</button>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1">Clique em Upload para enviar a foto para o Supabase</p>
+                                <input type="hidden" id="foto" class="w-full border p-2 rounded mt-2">
+                                <div class="mt-2">
+                                    <label class="text-xs text-gray-600">OU cole o link da foto (Google Drive, etc):</label>
+                                    <input type="url" id="fotoLink" class="w-full border p-2 rounded mt-1" placeholder="https://...">
+                                </div>
+                            </div>
+                            <div id="previewFotoCadastro" class="hidden">
+                                <img id="previewImagemCadastro" class="h-32 w-32 object-cover rounded-full border-2 border-blue-500">
+                                <button type="button" id="btnLimparPreview" class="text-red-500 text-sm mt-1">✖ Remover prévia</button>
+                            </div>
                         </div>
-                        <input type="hidden" id="foto" class="w-full border p-2 rounded">
-                        <div id="previewFoto" class="mt-2 hidden">
-                            <img id="previewImagem" class="h-20 w-20 object-cover rounded-full">
-                        </div>
-                        <p class="text-xs text-gray-500 mt-1">Clique em Upload para enviar a foto</p>
                     </div>
+                    
                     <div><label class="block text-sm font-medium mb-1">E-mail</label><input type="email" id="email" class="w-full border p-2 rounded"></div>
                     <div><label class="block text-sm font-medium mb-1">Laudo de Restrição</label><select id="laudoRestricao" class="w-full border p-2 rounded"><option value="">Selecione</option><option>Sim</option><option>Não</option><option>Em análise</option></select></div>
                     <div><label class="block text-sm font-medium mb-1">Cargo/Situação</label><select id="cargoSituacao" class="w-full border p-2 rounded"><option value="">Selecione</option><option>Efetivo</option><option>Comissionado</option><option>Contratado</option><option>Estagiário</option><option>Temporário</option><option>Afastado</option></select></div>
@@ -131,7 +144,31 @@
                 <div><label>Data Nascimento</label><input type="date" id="editDataNascimento" class="w-full border p-2 rounded"></div>
                 <div><label>Local Trabalho</label><input type="text" id="editLocalTrabalho" class="w-full border p-2 rounded"></div>
                 <div><label>Cor/Raça</label><select id="editCorRaca" class="w-full border p-2 rounded"><option value="">Selecione</option><option>Branca</option><option>Preta</option><option>Parda</option><option>Amarela</option><option>Indígena</option></select></div>
-                <div><label>Foto</label><input type="text" id="editFoto" class="w-full border p-2 rounded" readonly placeholder="URL da foto gerada automaticamente"></div>
+                
+                <!-- CAMPO FOTO NA EDIÇÃO -->
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium mb-1">Foto do Funcionário</label>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <div class="flex gap-2 items-center">
+                                <input type="file" id="editUploadFoto" accept="image/*" class="flex-1 border p-2 rounded">
+                                <button type="button" id="btnEditUploadFoto" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">📤 Upload Nova Foto</button>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">Clique em Upload para enviar uma nova foto</p>
+                            <div class="mt-2">
+                                <label class="text-xs text-gray-600">Link atual da foto:</label>
+                                <input type="text" id="editFoto" class="w-full border p-2 rounded mt-1" readonly>
+                                <label class="text-xs text-gray-600 mt-2">OU cole um novo link:</label>
+                                <input type="url" id="editFotoLink" class="w-full border p-2 rounded mt-1" placeholder="https://...">
+                            </div>
+                        </div>
+                        <div id="previewFotoEdicao" class="hidden">
+                            <img id="previewImagemEdicao" class="h-32 w-32 object-cover rounded-full border-2 border-blue-500">
+                            <button type="button" id="btnLimparPreviewEdit" class="text-red-500 text-sm mt-1">✖ Remover prévia</button>
+                        </div>
+                    </div>
+                </div>
+                
                 <div><label>E-mail</label><input type="email" id="editEmail" class="w-full border p-2 rounded"></div>
                 <div><label>Laudo Restrição</label><select id="editLaudoRestricao" class="w-full border p-2 rounded"><option value="">Selecione</option><option>Sim</option><option>Não</option><option>Em análise</option></select></div>
                 <div><label>Cargo/Situação</label><select id="editCargoSituacao" class="w-full border p-2 rounded"><option value="">Selecione</option><option>Efetivo</option><option>Comissionado</option><option>Contratado</option><option>Estagiário</option><option>Temporário</option><option>Afastado</option></select></div>
@@ -215,20 +252,40 @@
 
         document.getElementById('btnLogout').onclick = async () => { await supabaseSistema.auth.signOut(); window.location.href = 'index.html'; };
 
-        // FUNÇÃO PARA UPLOAD DE FOTO
+        // FUNÇÃO PARA UPLOAD DE FOTO (GENÉRICA)
+        async function uploadFoto(arquivo, nomeBase) {
+            const extensao = arquivo.name.split('.').pop();
+            const nomeArquivo = `${nomeBase.replace(/[^a-z0-9]/gi, '_')}_${Date.now()}.${extensao}`;
+            
+            const { data, error } = await supabaseSistema.storage
+                .from('fotos_funcionarios')
+                .upload(nomeArquivo, arquivo);
+
+            if (error) throw error;
+
+            const { data: urlData } = supabaseSistema.storage
+                .from('fotos_funcionarios')
+                .getPublicUrl(nomeArquivo);
+
+            return urlData.publicUrl;
+        }
+
+        // UPLOAD NO CADASTRO
         let arquivoSelecionado = null;
+        let previewAtual = null;
 
         document.getElementById('uploadFoto').addEventListener('change', (e) => {
             arquivoSelecionado = e.target.files[0];
             if (arquivoSelecionado) {
-                const preview = document.getElementById('previewImagem');
-                const previewDiv = document.getElementById('previewFoto');
+                const preview = document.getElementById('previewImagemCadastro');
+                const previewDiv = document.getElementById('previewFotoCadastro');
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     preview.src = e.target.result;
                     previewDiv.classList.remove('hidden');
                 };
                 reader.readAsDataURL(arquivoSelecionado);
+                previewAtual = 'cadastro';
             }
         });
 
@@ -244,29 +301,47 @@
                 return;
             }
 
-            const extensao = arquivoSelecionado.name.split('.').pop();
-            const nomeArquivo = `${nomeCompleto.replace(/[^a-z0-9]/gi, '_')}_${Date.now()}.${extensao}`;
-            
-            const { data, error } = await supabaseSistema.storage
-                .from('fotos_funcionarios')
-                .upload(nomeArquivo, arquivoSelecionado);
-
-            if (error) {
+            try {
+                const url = await uploadFoto(arquivoSelecionado, nomeCompleto);
+                document.getElementById('foto').value = url;
+                document.getElementById('fotoLink').value = '';
+                alert('✅ Foto enviada com sucesso!');
+            } catch (error) {
                 alert('Erro no upload: ' + error.message);
-                return;
             }
-
-            const { data: urlData } = supabaseSistema.storage
-                .from('fotos_funcionarios')
-                .getPublicUrl(nomeArquivo);
-
-            document.getElementById('foto').value = urlData.publicUrl;
-            alert('✅ Foto enviada com sucesso!');
         };
+
+        document.getElementById('btnLimparPreview').onclick = () => {
+            document.getElementById('previewFotoCadastro').classList.add('hidden');
+            document.getElementById('uploadFoto').value = '';
+            arquivoSelecionado = null;
+        };
+
+        // Capturar link manual no cadastro
+        document.getElementById('fotoLink').addEventListener('change', (e) => {
+            const link = e.target.value;
+            if (link) {
+                document.getElementById('foto').value = link;
+                // Mostrar preview do link
+                const preview = document.getElementById('previewImagemCadastro');
+                const previewDiv = document.getElementById('previewFotoCadastro');
+                preview.src = link;
+                previewDiv.classList.remove('hidden');
+                previewAtual = 'cadastro';
+            }
+        });
 
         // CADASTRO
         document.getElementById('formFuncionario').onsubmit = async (e) => {
             e.preventDefault();
+            
+            // Verificar se tem foto do upload ou do link
+            let fotoUrl = document.getElementById('foto').value;
+            const fotoLink = document.getElementById('fotoLink').value;
+            if (fotoLink && !fotoUrl) {
+                fotoUrl = fotoLink;
+            }
+            
             const dados = {
                 "Nome Completo": document.getElementById('nomeCompleto').value,
                 "Unidade Escolar": document.getElementById('unidadeEscolar').value || null,
@@ -278,7 +353,7 @@
                 "Data de Nascimento": document.getElementById('dataNascimento').value || null,
                 "Local Atual de Trabalho e Função": document.getElementById('localTrabalho').value || null,
                 "Cor/Raça": document.getElementById('corRaca').value || null,
-                "Foto (link da foto)": document.getElementById('foto').value || null,
+                "Foto (link da foto)": fotoUrl || null,
                 "E-mail": document.getElementById('email').value || null,
                 "Laudo de Restrição": document.getElementById('laudoRestricao').value || null,
                 "Cargo/Situação": document.getElementById('cargoSituacao').value || null,
@@ -289,7 +364,8 @@
             else { 
                 alert('✅ Cadastrado!'); 
                 document.getElementById('formFuncionario').reset();
-                document.getElementById('previewFoto').classList.add('hidden');
+                document.getElementById('previewFotoCadastro').classList.add('hidden');
+                document.getElementById('foto').value = '';
                 arquivoSelecionado = null;
             }
         };
@@ -316,10 +392,11 @@
             let html = '';
             for (const f of data) {
                 const nomeEsc = (f['Nome Completo'] || '').replace(/'/g, "\\'");
+                const fotoUrl = f['Foto (link da foto)'];
                 html += `<div class="border rounded-lg p-4 hover:shadow">
                     <div class="flex justify-between items-start">
                         <div class="flex gap-4">
-                            ${f['Foto (link da foto)'] ? `<img src="${f['Foto (link da foto)']}" class="h-16 w-16 object-cover rounded-full" onerror="this.style.display='none'">` : ''}
+                            ${fotoUrl ? `<img src="${fotoUrl}" class="h-16 w-16 object-cover rounded-full" onerror="this.style.display='none'">` : '<div class="h-16 w-16 bg-gray-200 rounded-full flex items-center justify-center"><span class="text-gray-400">📸</span></div>'}
                             <div>
                                 <h3 class="font-bold text-lg">${f['Nome Completo'] || '-'}</h3>
                                 <p class="text-gray-600">${f['Função'] || '-'} | ${f['Unidade Escolar'] || '-'}</p>
@@ -370,10 +447,11 @@
             let html = '';
             for (const f of data) {
                 const nomeEsc = (f['Nome Completo'] || '').replace(/'/g, "\\'");
+                const fotoUrl = f['Foto (link da foto)'];
                 html += `<div class="border rounded-lg p-4 hover:shadow">
                     <div class="flex justify-between items-start">
                         <div class="flex gap-4">
-                            ${f['Foto (link da foto)'] ? `<img src="${f['Foto (link da foto)']}" class="h-16 w-16 object-cover rounded-full" onerror="this.style.display='none'">` : ''}
+                            ${fotoUrl ? `<img src="${fotoUrl}" class="h-16 w-16 object-cover rounded-full" onerror="this.style.display='none'">` : '<div class="h-16 w-16 bg-gray-200 rounded-full flex items-center justify-center"><span class="text-gray-400">📸</span></div>'}
                             <div>
                                 <h3 class="font-bold text-lg">${f['Nome Completo'] || '-'}</h3>
                                 <p class="text-gray-600">${f['Função'] || '-'} | ${f['Unidade Escolar'] || '-'}</p>
@@ -396,11 +474,12 @@
             const { data } = await supabaseSistema.from('tblCadastro').select('*').eq('"Nome Completo"', nome).single();
             if (!data) return;
             
-            // Layout com foto em destaque na esquerda e informações na direita
+            const fotoUrl = data['Foto (link da foto)'];
+            
             let html = `
                 <div class="md:col-span-1 flex flex-col items-center">
-                    ${data['Foto (link da foto)'] ? 
-                        `<img src="${data['Foto (link da foto)']}" class="w-48 h-48 object-cover rounded-full border-4 border-blue-500 shadow-lg" onerror="this.src='https://via.placeholder.com/192?text=Sem+Foto'">` : 
+                    ${fotoUrl ? 
+                        `<img src="${fotoUrl}" class="w-48 h-48 object-cover rounded-full border-4 border-blue-500 shadow-lg" onerror="this.src='https://via.placeholder.com/192?text=Sem+Foto'">` : 
                         `<div class="w-48 h-48 bg-gray-200 rounded-full flex items-center justify-center border-4 border-gray-300">
                             <span class="text-gray-400 text-center">📸<br>Sem foto</span>
                          </div>`
@@ -431,10 +510,69 @@
             document.getElementById('modalDetalhes').classList.add('flex');
         };
 
-        // EDIÇÃO
+        // EDIÇÃO - Com upload de foto
+        let editArquivoSelecionado = null;
+        
+        document.getElementById('editUploadFoto').addEventListener('change', (e) => {
+            editArquivoSelecionado = e.target.files[0];
+            if (editArquivoSelecionado) {
+                const preview = document.getElementById('previewImagemEdicao');
+                const previewDiv = document.getElementById('previewFotoEdicao');
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    preview.src = e.target.result;
+                    previewDiv.classList.remove('hidden');
+                };
+                reader.readAsDataURL(editArquivoSelecionado);
+            }
+        });
+        
+        document.getElementById('btnEditUploadFoto').onclick = async () => {
+            if (!editArquivoSelecionado) {
+                alert('Selecione uma foto primeiro!');
+                return;
+            }
+            
+            const nomeCompleto = document.getElementById('editNomeCompleto').value;
+            if (!nomeCompleto) {
+                alert('Nome Completo é obrigatório!');
+                return;
+            }
+            
+            try {
+                const url = await uploadFoto(editArquivoSelecionado, nomeCompleto);
+                document.getElementById('editFoto').value = url;
+                document.getElementById('editFotoLink').value = '';
+                alert('✅ Nova foto enviada com sucesso!');
+            } catch (error) {
+                alert('Erro no upload: ' + error.message);
+            }
+        };
+        
+        document.getElementById('btnLimparPreviewEdit').onclick = () => {
+            document.getElementById('previewFotoEdicao').classList.add('hidden');
+            document.getElementById('editUploadFoto').value = '';
+            editArquivoSelecionado = null;
+        };
+        
+        // Capturar link manual na edição
+        document.getElementById('editFotoLink').addEventListener('change', (e) => {
+            const link = e.target.value;
+            if (link) {
+                document.getElementById('editFoto').value = link;
+                const preview = document.getElementById('previewImagemEdicao');
+                const previewDiv = document.getElementById('previewFotoEdicao');
+                preview.src = link;
+                previewDiv.classList.remove('hidden');
+            }
+        });
+        
         window.abrirEdicao = async function(nome) {
             const { data } = await supabaseSistema.from('tblCadastro').select('*').eq('"Nome Completo"', nome).single();
             if (!data) return;
+            
+            const fotoAtual = data['Foto (link da foto)'] || '';
+            
             document.getElementById('editNomeOriginal').value = nome;
             document.getElementById('editNomeCompleto').value = data['Nome Completo'] || '';
             document.getElementById('editUnidadeEscolar').value = data['Unidade Escolar'] || '';
@@ -446,17 +584,37 @@
             document.getElementById('editDataNascimento').value = data['Data de Nascimento'] || '';
             document.getElementById('editLocalTrabalho').value = data['Local Atual de Trabalho e Função'] || '';
             document.getElementById('editCorRaca').value = data['Cor/Raça'] || '';
-            document.getElementById('editFoto').value = data['Foto (link da foto)'] || '';
+            document.getElementById('editFoto').value = fotoAtual;
             document.getElementById('editEmail').value = data['E-mail'] || '';
             document.getElementById('editLaudoRestricao').value = data['Laudo de Restrição'] || '';
             document.getElementById('editCargoSituacao').value = data['Cargo/Situação'] || '';
             document.getElementById('editObservacoes').value = data['Observações'] || '';
+            document.getElementById('editFotoLink').value = '';
+            
+            // Mostrar preview da foto atual se existir
+            if (fotoAtual) {
+                const preview = document.getElementById('previewImagemEdicao');
+                const previewDiv = document.getElementById('previewFotoEdicao');
+                preview.src = fotoAtual;
+                previewDiv.classList.remove('hidden');
+            } else {
+                document.getElementById('previewFotoEdicao').classList.add('hidden');
+            }
+            
             document.getElementById('modalEdicao').classList.remove('hidden');
             document.getElementById('modalEdicao').classList.add('flex');
         };
 
         document.getElementById('formEdicao').onsubmit = async (e) => {
             e.preventDefault();
+            
+            // Pegar a foto (se veio do upload ou do link)
+            let fotoUrl = document.getElementById('editFoto').value;
+            const fotoLink = document.getElementById('editFotoLink').value;
+            if (fotoLink && !fotoUrl) {
+                fotoUrl = fotoLink;
+            }
+            
             const nomeOriginal = document.getElementById('editNomeOriginal').value;
             const dados = {
                 "Nome Completo": document.getElementById('editNomeCompleto').value,
@@ -469,7 +627,7 @@
                 "Data de Nascimento": document.getElementById('editDataNascimento').value || null,
                 "Local Atual de Trabalho e Função": document.getElementById('editLocalTrabalho').value || null,
                 "Cor/Raça": document.getElementById('editCorRaca').value || null,
-                "Foto (link da foto)": document.getElementById('editFoto').value || null,
+                "Foto (link da foto)": fotoUrl || null,
                 "E-mail": document.getElementById('editEmail').value || null,
                 "Laudo de Restrição": document.getElementById('editLaudoRestricao').value || null,
                 "Cargo/Situação": document.getElementById('editCargoSituacao').value || null,
@@ -484,6 +642,9 @@
             const modal = document.getElementById('modalEdicao');
             modal.classList.add('hidden');
             modal.classList.remove('flex');
+            document.getElementById('previewFotoEdicao').classList.add('hidden');
+            document.getElementById('editUploadFoto').value = '';
+            editArquivoSelecionado = null;
         };
 
         // EXCLUIR
