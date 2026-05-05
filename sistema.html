@@ -7,30 +7,36 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        .foto-perfil {
-            width: 150px;
-            height: 150px;
-            object-fit: cover;
-            border-radius: 50%;
-            border: 4px solid #3b82f6;
-            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.2);
-        }
         .foto-miniatura {
-            width: 45px;
-            height: 45px;
+            width: 40px;
+            height: 40px;
             object-fit: cover;
             border-radius: 50%;
-            border: 2px solid #e5e7eb;
         }
-        .card-hover:hover {
-            transform: translateY(-2px);
-            transition: all 0.3s ease;
+        .foto-perfil {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 3px solid #3b82f6;
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
 <body class="bg-gray-100">
 
-    <!-- Navbar -->
     <nav class="bg-white shadow-lg sticky top-0 z-10">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
@@ -41,31 +47,26 @@
                         </svg>
                     </div>
                     <h1 class="text-xl font-bold text-gray-800">Sistema de Cadastro de Funcionários</h1>
-                    <span class="text-sm text-gray-500 hidden sm:inline">Secretaria Municipal de Educação de Santa Branca</span>
+                    <span class="text-sm text-gray-500">Secretaria Municipal de Educação de Santa Branca</span>
                 </div>
-                <div class="flex items-center space-x-3">
-                    <span id="userName" class="text-sm text-gray-600 hidden md:inline"></span>
-                    <button id="btnLogout" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition text-sm">
-                        Sair
-                    </button>
-                </div>
+                <button id="btnLogout" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition text-sm">
+                    Sair
+                </button>
             </div>
         </div>
     </nav>
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <!-- Botão Adicionar -->
         <div class="mb-6 flex justify-between items-center">
-            <h2 class="text-2xl font-bold text-gray-800">Lista de Funcionários</h2>
-            <button id="btnAdicionar" class="bg-green-600 text-white px-5 py-2 rounded-lg hover:bg-green-700 transition flex items-center gap-2">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                </svg>
-                Novo Funcionário
+            <h2 class="text-2xl font-bold text-gray-800">Funcionários Cadastrados</h2>
+            <button id="btnAdicionar" class="bg-green-600 text-white px-5 py-2 rounded-lg hover:bg-green-700 transition">
+                + Novo Funcionário
             </button>
         </div>
 
-        <!-- Tabela de Funcionários -->
+        <!-- Área de diagnóstico -->
+        <div id="diagnostico" class="mb-4 p-3 bg-blue-100 border border-blue-400 rounded-lg text-sm hidden"></div>
+
         <div class="bg-white rounded-xl shadow-lg overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200">
@@ -79,9 +80,12 @@
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ações</th>
                         </tr>
                     </thead>
-                    <tbody id="tabelaFuncionarios" class="bg-white divide-y divide-gray-200">
+                    <tbody id="tabelaFuncionarios">
                         <tr>
-                            <td colspan="6" class="text-center py-8 text-gray-500">Carregando funcionários...</td>
+                            <td colspan="6" class="text-center py-8">
+                                <div class="loading"></div>
+                                <span class="ml-2">Carregando funcionários...</span>
+                            </td>
                         </tr>
                     </tbody>
                 </table>
@@ -89,89 +93,57 @@
         </div>
     </div>
 
-    <!-- Modal de Cadastro/Edição de Funcionário -->
+    <!-- Modal de Cadastro/Edição -->
     <div id="modalFuncionario" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
             <div class="p-6">
-                <h3 id="modalTitle" class="text-2xl font-bold mb-4">Cadastrar Funcionário</h3>
-                
+                <h3 id="modalTitle" class="text-xl font-bold mb-4">Cadastrar Funcionário</h3>
                 <form id="formFuncionario">
                     <input type="hidden" id="funcionarioId">
                     
-                    <!-- Área da Foto -->
-                    <div class="flex justify-center mb-6">
-                        <div class="relative">
-                            <img id="fotoPreview" 
-                                 src="https://via.placeholder.com/150?text=Sem+Foto" 
-                                 alt="Foto do Funcionário"
-                                 class="foto-perfil cursor-pointer hover:opacity-80 transition">
-                            <button type="button" id="btnAlterarFoto" 
-                                    class="absolute bottom-0 right-0 bg-blue-500 text-white rounded-full p-2 shadow-md hover:bg-blue-600 transition">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                </svg>
-                            </button>
+                    <div class="mb-3">
+                        <label class="block text-gray-700 mb-1 font-medium">Nome Completo *</label>
+                        <input type="text" id="nomeFunc" required class="w-full border border-gray-300 p-2 rounded-lg">
+                    </div>
+                    <div class="mb-3">
+                        <label class="block text-gray-700 mb-1 font-medium">Cargo *</label>
+                        <input type="text" id="cargoFunc" required class="w-full border border-gray-300 p-2 rounded-lg">
+                    </div>
+                    <div class="mb-3">
+                        <label class="block text-gray-700 mb-1 font-medium">E-mail *</label>
+                        <input type="email" id="emailFunc" required class="w-full border border-gray-300 p-2 rounded-lg">
+                    </div>
+                    <div class="mb-3">
+                        <label class="block text-gray-700 mb-1 font-medium">Telefone</label>
+                        <input type="text" id="telefoneFunc" class="w-full border border-gray-300 p-2 rounded-lg" placeholder="(00) 00000-0000">
+                    </div>
+                    <div class="mb-3">
+                        <label class="block text-gray-700 mb-1 font-medium">Link da Foto</label>
+                        <input type="text" id="fotoUrlFunc" class="w-full border border-gray-300 p-2 rounded-lg" placeholder="https://exemplo.com/foto.jpg">
+                        <div class="mt-2 flex justify-center">
+                            <img id="previewImg" class="w-16 h-16 rounded-full object-cover hidden">
                         </div>
                     </div>
                     
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-gray-700 mb-1 font-medium">Nome Completo *</label>
-                            <input type="text" id="nomeFunc" required class="w-full border border-gray-300 p-2 rounded-lg">
-                        </div>
-                        <div>
-                            <label class="block text-gray-700 mb-1 font-medium">Cargo *</label>
-                            <input type="text" id="cargoFunc" required class="w-full border border-gray-300 p-2 rounded-lg">
-                        </div>
-                        <div>
-                            <label class="block text-gray-700 mb-1 font-medium">E-mail *</label>
-                            <input type="email" id="emailFunc" required class="w-full border border-gray-300 p-2 rounded-lg">
-                        </div>
-                        <div>
-                            <label class="block text-gray-700 mb-1 font-medium">Telefone</label>
-                            <input type="text" id="telefoneFunc" class="w-full border border-gray-300 p-2 rounded-lg" placeholder="(00) 00000-0000">
-                        </div>
-                        <div>
-                            <label class="block text-gray-700 mb-1 font-medium">Data Nascimento</label>
-                            <input type="date" id="dataNascFunc" class="w-full border border-gray-300 p-2 rounded-lg">
-                        </div>
-                        <div>
-                            <label class="block text-gray-700 mb-1 font-medium">Setor</label>
-                            <input type="text" id="setorFunc" class="w-full border border-gray-300 p-2 rounded-lg">
-                        </div>
-                        <div class="md:col-span-2">
-                            <label class="block text-gray-700 mb-1 font-medium">Endereço</label>
-                            <input type="text" id="enderecoFunc" class="w-full border border-gray-300 p-2 rounded-lg">
-                        </div>
-                    </div>
-                    
-                    <!-- Campo da Foto (usando o nome correto da coluna: Foto) -->
-                    <input type="hidden" id="fotoUrlFunc">
-                    
-                    <div class="flex gap-3 mt-6">
-                        <button type="submit" class="flex-1 bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition font-semibold">
-                            Salvar
-                        </button>
-                        <button type="button" id="fecharModalFunc" class="flex-1 bg-gray-300 text-gray-700 p-2 rounded-lg hover:bg-gray-400 transition">
-                            Cancelar
-                        </button>
+                    <div class="flex gap-3 mt-5">
+                        <button type="submit" class="flex-1 bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700">Salvar</button>
+                        <button type="button" id="fecharModalFunc" class="flex-1 bg-gray-300 p-2 rounded-lg hover:bg-gray-400">Cancelar</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 
-    <!-- Modal de Visualização da Ficha -->
+    <!-- Modal Visualizar Ficha -->
     <div id="modalFicha" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md">
             <div class="p-6">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-2xl font-bold">Ficha do Funcionário</h3>
+                    <h3 class="text-xl font-bold">Ficha do Funcionário</h3>
                     <button id="fecharFicha" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
                 </div>
-                <div id="conteudoFicha" class="space-y-4">
-                    <!-- Conteúdo será preenchido dinamicamente -->
+                <div id="conteudoFicha" class="text-center">
+                    <!-- Conteúdo dinâmico -->
                 </div>
             </div>
         </div>
@@ -182,7 +154,6 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kdmdkdXhkZWJlaXl1amZydXBzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4NzM4MzgsImV4cCI6MjA5MzQ0OTgzOH0.G7fWT-Ys6RLif0ce8zuHbjqbDUm6jOd8oxa9dSjPtg8';
         
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        let usuarioLogado = null;
 
         // Verificar sessão
         async function verificarSessao() {
@@ -191,50 +162,85 @@
                 window.location.href = 'index.html';
                 return;
             }
-            usuarioLogado = session.user;
-            document.getElementById('userName').textContent = usuarioLogado.email?.split('@')[0] || 'Usuário';
+            console.log('✅ Usuário logado:', session.user.email);
             carregarFuncionarios();
         }
 
         // Carregar funcionários da tabela tblCadastro
         async function carregarFuncionarios() {
-            const { data, error } = await supabase
+            console.log('🔄 Carregando funcionários da tabela tblCadastro...');
+            
+            const { data, error, status, statusText } = await supabase
                 .from('tblCadastro')
                 .select('*')
-                .order('created_at', { ascending: false });
+                .order('id', { ascending: false });
+            
+            console.log('📊 Resposta do Supabase:', { data, error, status, statusText });
             
             if (error) {
-                console.error('Erro ao carregar:', error);
-                document.getElementById('tabelaFuncionarios').innerHTML = '<tr><td colspan="6" class="text-center py-8 text-red-500">Erro ao carregar dados</td></tr>';
+                console.error('❌ ERRO detalhado:', error);
+                document.getElementById('tabelaFuncionarios').innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center py-8 text-red-500">
+                            ❌ Erro: ${error.message}<br>
+                            <span class="text-xs">Verifique o console do navegador (F12)</span>
+                        </td>
+                    </tr>
+                `;
                 return;
             }
             
-            if (data.length === 0) {
-                document.getElementById('tabelaFuncionarios').innerHTML = '<tr><td colspan="6" class="text-center py-8 text-gray-500">Nenhum funcionário cadastrado</td></tr>';
+            if (!data || data.length === 0) {
+                console.log('ℹ️ Nenhum funcionário encontrado na tabela tblCadastro');
+                document.getElementById('tabelaFuncionarios').innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center py-8 text-gray-500">
+                            📋 Nenhum funcionário cadastrado.<br>
+                            Clique em "Novo Funcionário" para adicionar.
+                        </td>
+                    </tr>
+                `;
                 return;
             }
+            
+            console.log(`✅ ${data.length} funcionários carregados!`);
+            console.log('📋 Primeiro funcionário (para ver estrutura):', data[0]);
+            
+            // Mostrar diagnóstico com as colunas disponíveis
+            const colunas = Object.keys(data[0]);
+            document.getElementById('diagnostico').innerHTML = `
+                <strong>🔍 Diagnóstico:</strong> Tabela "tblCadastro" tem ${data.length} registros.<br>
+                <strong>Colunas encontradas:</strong> ${colunas.join(', ')}
+            `;
+            document.getElementById('diagnostico').classList.remove('hidden');
             
             renderizarTabela(data);
         }
 
-        // Renderizar tabela com fotos (usando coluna "Foto")
+        // Renderizar tabela (adaptado às colunas reais da sua tabela)
         function renderizarTabela(funcionarios) {
             const tbody = document.getElementById('tabelaFuncionarios');
             tbody.innerHTML = '';
             
             funcionarios.forEach(func => {
-                const fotoUrl = func.Foto || null; // Nome da coluna: Foto (com F maiúsculo)
+                // Mapeamento flexível de colunas
+                const nome = func.nome || func.NOME || func.name || func.Nome || '-';
+                const cargo = func.cargo || func.CARGO || func.Cargo || '-';
+                const email = func.email || func.EMAIL || func.Email || '-';
+                const telefone = func.telefone || func.TELEFONE || func.Telefone || func.phone || '-';
+                const foto = func.Foto || func.foto || func.FOTO || func.foto_url || null;
+                
                 const row = tbody.insertRow();
                 row.innerHTML = `
                     <td class="px-4 py-3">
-                        <img src="${fotoUrl || 'https://via.placeholder.com/45?text=Sem+Foto'}" 
+                        <img src="${foto || 'https://via.placeholder.com/40?text=Sem+Foto'}" 
                              class="foto-miniatura"
-                             onerror="this.src='https://via.placeholder.com/45?text=Erro'">
+                             onerror="this.src='https://via.placeholder.com/40?text=Erro'">
                     </td>
-                    <td class="px-4 py-3 font-medium text-gray-900">${func.nome || '-'}</td>
-                    <td class="px-4 py-3 text-gray-600">${func.cargo || '-'}</td>
-                    <td class="px-4 py-3 text-gray-600">${func.email || '-'}</td>
-                    <td class="px-4 py-3 text-gray-600">${func.telefone || '-'}</td>
+                    <td class="px-4 py-3 font-medium text-gray-900">${nome}</td>
+                    <td class="px-4 py-3 text-gray-600">${cargo}</td>
+                    <td class="px-4 py-3 text-gray-600">${email}</td>
+                    <td class="px-4 py-3 text-gray-600">${telefone}</td>
                     <td class="px-4 py-3">
                         <div class="flex gap-2">
                             <button onclick="verFicha('${func.id}')" class="bg-blue-500 text-white px-3 py-1 rounded-lg text-sm hover:bg-blue-600">
@@ -252,7 +258,7 @@
             });
         }
 
-        // Ver ficha completa (com FOTO GRANDE)
+        // Ver ficha do funcionário
         window.verFicha = async function(id) {
             const { data, error } = await supabase
                 .from('tblCadastro')
@@ -261,50 +267,36 @@
                 .single();
             
             if (error) {
-                alert('Erro ao carregar ficha');
+                alert('Erro ao carregar ficha: ' + error.message);
                 return;
             }
             
-            const fotoUrl = data.Foto || null;
+            const nome = data.nome || data.NOME || '-';
+            const cargo = data.cargo || data.CARGO || '-';
+            const email = data.email || data.EMAIL || '-';
+            const telefone = data.telefone || data.TELEFONE || '-';
+            const foto = data.Foto || data.foto || null;
             
-            const conteudo = `
-                <div class="flex flex-col items-center mb-6">
-                    <img src="${fotoUrl || 'https://via.placeholder.com/150?text=Sem+Foto'}" 
+            document.getElementById('conteudoFicha').innerHTML = `
+                <div class="flex flex-col items-center">
+                    <img src="${foto || 'https://via.placeholder.com/100?text=Sem+Foto'}" 
                          class="foto-perfil mb-3"
-                         onerror="this.src='https://via.placeholder.com/150?text=Foto+Indisponivel'">
-                    <h2 class="text-xl font-bold">${data.nome || 'Não informado'}</h2>
-                    <p class="text-blue-600 font-semibold">${data.cargo || 'Cargo não informado'}</p>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="bg-gray-50 p-3 rounded-lg">
-                        <p class="text-sm text-gray-500">E-mail</p>
-                        <p class="font-medium">${data.email || '-'}</p>
-                    </div>
-                    <div class="bg-gray-50 p-3 rounded-lg">
-                        <p class="text-sm text-gray-500">Telefone</p>
-                        <p class="font-medium">${data.telefone || '-'}</p>
-                    </div>
-                    <div class="bg-gray-50 p-3 rounded-lg">
-                        <p class="text-sm text-gray-500">Data de Nascimento</p>
-                        <p class="font-medium">${data.data_nascimento || '-'}</p>
-                    </div>
-                    <div class="bg-gray-50 p-3 rounded-lg">
-                        <p class="text-sm text-gray-500">Setor</p>
-                        <p class="font-medium">${data.setor || '-'}</p>
-                    </div>
-                    <div class="bg-gray-50 p-3 rounded-lg md:col-span-2">
-                        <p class="text-sm text-gray-500">Endereço</p>
-                        <p class="font-medium">${data.endereco || '-'}</p>
+                         onerror="this.src='https://via.placeholder.com/100?text=Erro'">
+                    <h2 class="text-lg font-bold">${nome}</h2>
+                    <p class="text-blue-600 font-semibold">${cargo}</p>
+                    <hr class="my-3 w-full">
+                    <div class="w-full text-left">
+                        <p><strong>📧 E-mail:</strong> ${email}</p>
+                        <p><strong>📞 Telefone:</strong> ${telefone}</p>
                     </div>
                 </div>
             `;
             
-            document.getElementById('conteudoFicha').innerHTML = conteudo;
             document.getElementById('modalFicha').classList.remove('hidden');
             document.getElementById('modalFicha').classList.add('flex');
         };
 
-        // Abrir modal para editar
+        // Editar funcionário
         window.editarFuncionario = async function(id) {
             const { data, error } = await supabase
                 .from('tblCadastro')
@@ -313,7 +305,7 @@
                 .single();
             
             if (error) {
-                alert('Erro ao carregar dados');
+                alert('Erro ao carregar dados: ' + error.message);
                 return;
             }
             
@@ -323,17 +315,13 @@
             document.getElementById('cargoFunc').value = data.cargo || '';
             document.getElementById('emailFunc').value = data.email || '';
             document.getElementById('telefoneFunc').value = data.telefone || '';
-            document.getElementById('dataNascFunc').value = data.data_nascimento || '';
-            document.getElementById('setorFunc').value = data.setor || '';
-            document.getElementById('enderecoFunc').value = data.endereco || '';
-            document.getElementById('fotoUrlFunc').value = data.Foto || '';
+            document.getElementById('fotoUrlFunc').value = data.Foto || data.foto || '';
             
-            // Atualizar preview da foto
-            const fotoPreview = document.getElementById('fotoPreview');
-            if (data.Foto) {
-                fotoPreview.src = data.Foto;
+            if (data.Foto || data.foto) {
+                document.getElementById('previewImg').src = data.Foto || data.foto;
+                document.getElementById('previewImg').classList.remove('hidden');
             } else {
-                fotoPreview.src = 'https://via.placeholder.com/150?text=Sem+Foto';
+                document.getElementById('previewImg').classList.add('hidden');
             }
             
             document.getElementById('modalFuncionario').classList.remove('hidden');
@@ -351,13 +339,13 @@
                 if (error) {
                     alert('Erro ao excluir: ' + error.message);
                 } else {
-                    alert('Funcionário excluído com sucesso!');
+                    alert('Funcionário excluído!');
                     carregarFuncionarios();
                 }
             }
         };
 
-        // Salvar funcionário (usando a coluna "Foto")
+        // Salvar funcionário
         document.getElementById('formFuncionario').addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -367,59 +355,53 @@
                 cargo: document.getElementById('cargoFunc').value,
                 email: document.getElementById('emailFunc').value,
                 telefone: document.getElementById('telefoneFunc').value,
-                data_nascimento: document.getElementById('dataNascFunc').value,
-                setor: document.getElementById('setorFunc').value,
-                endereco: document.getElementById('enderecoFunc').value,
-                Foto: document.getElementById('fotoUrlFunc').value || null  // Nome correto: Foto
+                Foto: document.getElementById('fotoUrlFunc').value || null
             };
             
-            let error;
+            console.log('💾 Salvando dados:', dados);
+            
+            let result;
             if (id) {
-                // Atualizar
-                const result = await supabase
+                result = await supabase
                     .from('tblCadastro')
                     .update(dados)
                     .eq('id', id);
-                error = result.error;
             } else {
-                // Inserir
-                const result = await supabase
+                result = await supabase
                     .from('tblCadastro')
                     .insert([dados]);
-                error = result.error;
             }
             
-            if (error) {
-                alert('Erro ao salvar: ' + error.message);
+            if (result.error) {
+                console.error('❌ Erro ao salvar:', result.error);
+                alert('Erro ao salvar: ' + result.error.message);
             } else {
+                console.log('✅ Salvo com sucesso!');
                 alert(id ? 'Funcionário atualizado!' : 'Funcionário cadastrado!');
                 fecharModalFuncionario();
                 carregarFuncionarios();
             }
         });
 
-        // Botão alterar foto - permite colar URL da imagem
-        document.getElementById('btnAlterarFoto').addEventListener('click', () => {
-            const url = prompt('Cole o link da foto do funcionário:', document.getElementById('fotoUrlFunc').value || '');
-            if (url && url.trim() !== '') {
-                document.getElementById('fotoUrlFunc').value = url;
-                document.getElementById('fotoPreview').src = url;
-                document.getElementById('fotoPreview').onerror = function() {
-                    this.src = 'https://via.placeholder.com/150?text=URL+Invalida';
-                    alert('⚠️ URL inválida! Verifique o link da imagem.');
-                };
+        // Preview da foto
+        document.getElementById('fotoUrlFunc').addEventListener('input', (e) => {
+            const url = e.target.value;
+            if (url && url.startsWith('http')) {
+                document.getElementById('previewImg').src = url;
+                document.getElementById('previewImg').classList.remove('hidden');
+            } else {
+                document.getElementById('previewImg').classList.add('hidden');
             }
         });
 
-        // Funções auxiliares
+        // Fechar modal
         function fecharModalFuncionario() {
             document.getElementById('modalFuncionario').classList.add('hidden');
             document.getElementById('modalFuncionario').classList.remove('flex');
             document.getElementById('formFuncionario').reset();
             document.getElementById('funcionarioId').value = '';
             document.getElementById('modalTitle').textContent = 'Cadastrar Funcionário';
-            document.getElementById('fotoPreview').src = 'https://via.placeholder.com/150?text=Sem+Foto';
-            document.getElementById('fotoUrlFunc').value = '';
+            document.getElementById('previewImg').classList.add('hidden');
         }
 
         document.getElementById('btnAdicionar').addEventListener('click', () => {
@@ -431,7 +413,6 @@
         document.getElementById('fecharModalFunc').addEventListener('click', fecharModalFuncionario);
         document.getElementById('fecharFicha').addEventListener('click', () => {
             document.getElementById('modalFicha').classList.add('hidden');
-            document.getElementById('modalFicha').classList.remove('flex');
         });
 
         document.getElementById('btnLogout').addEventListener('click', async () => {
