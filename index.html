@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Sistema de Funcionários | Prefeitura de Santa Branca</title>
+    <title>Login - Sistema de Cadastro de Funcionários</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* Estilo adicional para garantir que a imagem de fundo cubra toda a área e fique atrás do conteúdo */
+        /* Tailwind é apenas para desenvolvimento - OK para protótipo */
         body {
-            background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA4MDAgNjAwIiB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZTJlOGYwIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iNDAiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMyYzNlNTAgdGV4dC1hbmNob3I6IG1pZGRsZSIgZHk9Ii4zZW0iPkNSRUElMjBQT1IlMjBJTUFHRU08L3RleHQ+PHRleHQgeD0iNTAlIiB5PSI2MCUiIGZvbnQtc2l6ZT0iMjAiIGZpbGw9IiM1YjZjOGUiIHRleHQtYW5jaG9yOiBtaWRkbGUiPlBSRUZFSVRVUkElMjBERSUyMFNBTlRBJTIwQlJBTkNBIjwvdGV4dD48L3N2Zz4=');
+            background-image: url('Imagem1.png');
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
@@ -17,7 +17,6 @@
             position: relative;
         }
         
-        /* Overlay semitransparente para melhorar a legibilidade do formulário */
         body::before {
             content: "";
             position: fixed;
@@ -25,150 +24,115 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.55);
+            background-color: rgba(0, 0, 0, 0.6);
             z-index: 0;
         }
         
-        /* Garantir que o conteúdo fique acima do overlay */
         .min-h-screen {
             position: relative;
             z-index: 1;
         }
         
-        /* Efeito de vidro (glassmorphism) no card para destacar ainda mais */
         .glass-card {
             background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(2px);
+            backdrop-filter: blur(10px);
             border-radius: 1rem;
-            box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.3);
-            transition: transform 0.2s ease;
-        }
-        
-        .glass-card:hover {
-            transform: translateY(-3px);
-        }
-        
-        /* Pequeno ajuste para o título */
-        .titulo-prefeitura {
-            color: #1e3a8a;
-            border-left: 4px solid #3b82f6;
-            padding-left: 12px;
-        }
-        
-        /* Estilo do botão de cadastro */
-        .link-cadastro {
-            transition: all 0.2s;
-        }
-        .link-cadastro:hover {
-            text-decoration: underline;
-            opacity: 0.8;
         }
     </style>
 </head>
 <body class="bg-gray-100">
     <div class="min-h-screen flex items-center justify-center p-4">
         <div class="bg-white p-8 rounded-xl shadow-2xl w-96 glass-card">
-            <!-- Logo ou identificação visual da prefeitura (opcional) -->
             <div class="flex justify-center mb-4">
-                <div class="bg-blue-50 rounded-full p-2 w-16 h-16 flex items-center justify-center shadow-inner">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-blue-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                <div class="bg-blue-100 rounded-full p-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-blue-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
                 </div>
             </div>
-            <h2 class="text-2xl font-bold mb-2 text-center text-gray-800">Sistema de Cadastro</h2>
+            <h2 class="text-2xl font-bold text-center text-gray-800">Sistema de Cadastro</h2>
             <p class="text-center text-sm text-gray-500 mb-6">Prefeitura de Santa Branca</p>
             
             <form id="loginForm">
                 <div class="mb-4">
                     <label class="block text-gray-700 mb-2 font-medium">E-mail</label>
                     <input type="email" id="email" required 
-                           class="w-full border border-gray-300 p-2 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition">
+                           class="w-full border border-gray-300 p-2 rounded-lg focus:outline-none focus:border-blue-500">
                 </div>
                 
                 <div class="mb-6">
                     <label class="block text-gray-700 mb-2 font-medium">Senha</label>
                     <input type="password" id="senha" required 
-                           class="w-full border border-gray-300 p-2 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition">
+                           class="w-full border border-gray-300 p-2 rounded-lg focus:outline-none focus:border-blue-500">
                 </div>
                 
                 <button type="submit" 
-                        class="w-full bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition duration-200 font-semibold shadow-md">
+                        class="w-full bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition font-semibold">
                     Entrar
                 </button>
             </form>
             
-            <div id="mensagemErro" class="mt-4 text-red-500 text-center hidden text-sm font-medium"></div>
+            <div id="mensagemErro" class="mt-4 text-red-500 text-center hidden text-sm"></div>
             
             <p class="mt-6 text-center text-sm text-gray-600">
-                Não tem conta? <a href="#" id="btnCadastro" class="text-blue-600 font-semibold link-cadastro">Cadastre-se</a>
+                Não tem conta? <a href="#" id="btnCadastro" class="text-blue-600 font-semibold">Cadastre-se</a>
             </p>
-            
-            <!-- Rodapé com ano -->
-            <div class="mt-6 pt-3 border-t border-gray-200 text-center text-xs text-gray-400">
-                © 2025 Prefeitura de Santa Branca - Todos os direitos reservados
-            </div>
         </div>
     </div>
 
-    <!-- Modal de Cadastro (melhor visual) -->
-    <div id="modalCadastro" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center z-50 transition-all duration-300">
-        <div class="bg-white rounded-xl shadow-2xl w-96 p-6 transform transition-all">
-            <h3 class="text-2xl font-bold mb-2 text-gray-800">Criar Nova Conta</h3>
-            <p class="text-sm text-gray-500 mb-4">Preencha os dados para acessar o sistema</p>
+    <!-- Modal de Cadastro -->
+    <div id="modalCadastro" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-2xl w-96 p-6">
+            <h3 class="text-xl font-bold mb-4">Criar Nova Conta</h3>
             <form id="formCadastro">
                 <div class="mb-4">
-                    <label class="block text-gray-700 mb-1 font-medium">Nome completo</label>
-                    <input type="text" id="nomeCadastro" required class="w-full border border-gray-300 p-2 rounded-lg focus:outline-none focus:border-green-500">
+                    <label class="block text-gray-700 mb-1">Nome</label>
+                    <input type="text" id="nomeCadastro" required class="w-full border p-2 rounded-lg">
                 </div>
                 <div class="mb-4">
-                    <label class="block text-gray-700 mb-1 font-medium">E-mail</label>
-                    <input type="email" id="emailCadastro" required class="w-full border border-gray-300 p-2 rounded-lg focus:outline-none focus:border-green-500">
+                    <label class="block text-gray-700 mb-1">E-mail</label>
+                    <input type="email" id="emailCadastro" required class="w-full border p-2 rounded-lg">
                 </div>
-                <div class="mb-5">
-                    <label class="block text-gray-700 mb-1 font-medium">Senha</label>
-                    <input type="password" id="senhaCadastro" required class="w-full border border-gray-300 p-2 rounded-lg focus:outline-none focus:border-green-500">
-                    <p class="text-xs text-gray-400 mt-1">Mínimo 6 caracteres</p>
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-1">Senha</label>
+                    <input type="password" id="senhaCadastro" required class="w-full border p-2 rounded-lg">
                 </div>
-                <button type="submit" class="w-full bg-green-600 text-white p-2 rounded-lg hover:bg-green-700 transition font-semibold">
-                    Cadastrar
-                </button>
-                <button type="button" id="fecharModal" class="w-full mt-2 bg-gray-200 text-gray-800 p-2 rounded-lg hover:bg-gray-300 transition font-medium">
-                    Cancelar
-                </button>
+                <button type="submit" class="w-full bg-green-600 text-white p-2 rounded-lg hover:bg-green-700">Cadastrar</button>
+                <button type="button" id="fecharModal" class="w-full mt-2 bg-gray-300 p-2 rounded-lg">Cancelar</button>
             </form>
         </div>
     </div>
 
     <script>
-        // Configuração do Supabase
+        // Configuração do Supabase - declarado apenas UMA vez
         const SUPABASE_URL = 'https://ndvgduxdebeiyujfrups.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kdmdkdXhkZWJlaXl1amZydXBzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4NzM4MzgsImV4cCI6MjA5MzQ0OTgzOH0.G7fWT-Ys6RLif0ce8zuHbjqbDUm6jOd8oxa9dSjPtg8';
         
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        // Cria o cliente Supabase apenas uma vez
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // Verificar se já está logado e redirecionar
+        // Função para verificar se já está logado
         async function verificarSessao() {
-            const { data: { session } } = await supabase.auth.getSession();
+            const { data: { session } } = await supabaseClient.auth.getSession();
             if (session) {
+                console.log('Usuário já logado, redirecionando...');
                 window.location.href = 'sistema.html';
             }
         }
         
-        // Login
+        // Evento de login
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            const email = document.getElementById('email').value.trim();
+            const email = document.getElementById('email').value;
             const senha = document.getElementById('senha').value;
-            
-            // Pequeno feedback visual
-            const btnSubmit = document.querySelector('#loginForm button[type="submit"]');
+            const btnSubmit = e.target.querySelector('button');
             const textoOriginal = btnSubmit.textContent;
+            
             btnSubmit.textContent = 'Entrando...';
             btnSubmit.disabled = true;
             
-            const { data, error } = await supabase.auth.signInWithPassword({
+            const { data, error } = await supabaseClient.auth.signInWithPassword({
                 email: email,
                 password: senha
             });
@@ -178,110 +142,56 @@
             
             if (error) {
                 const msgErro = document.getElementById('mensagemErro');
-                msgErro.textContent = '❌ E-mail ou senha inválidos. Tente novamente.';
+                msgErro.textContent = '❌ E-mail ou senha inválidos';
                 msgErro.classList.remove('hidden');
-                // Limpa a mensagem após 4 segundos
-                setTimeout(() => {
-                    if (msgErro) msgErro.classList.add('hidden');
-                }, 4000);
+                setTimeout(() => msgErro.classList.add('hidden'), 3000);
+                console.error('Erro de login:', error.message);
             } else {
+                console.log('Login bem-sucedido, redirecionando...');
                 window.location.href = 'sistema.html';
             }
         });
 
-        // Modal cadastro
+        // Modal de cadastro
         const modal = document.getElementById('modalCadastro');
-        const btnCadastro = document.getElementById('btnCadastro');
-        const fecharModal = document.getElementById('fecharModal');
-        
-        btnCadastro.addEventListener('click', (e) => {
+        document.getElementById('btnCadastro').addEventListener('click', (e) => {
             e.preventDefault();
             modal.classList.remove('hidden');
             modal.classList.add('flex');
         });
         
-        fecharModal.addEventListener('click', () => {
+        document.getElementById('fecharModal').addEventListener('click', () => {
             modal.classList.add('hidden');
             modal.classList.remove('flex');
-            // Limpar formulário ao fechar manualmente
-            document.getElementById('formCadastro').reset();
         });
-        
-        // Clicar fora do modal também fecha (opcional)
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                modal.classList.add('hidden');
-                modal.classList.remove('flex');
-                document.getElementById('formCadastro').reset();
-            }
-        });
-        
-        // Cadastro de novo usuário
+
+        // Evento de cadastro
         document.getElementById('formCadastro').addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            const email = document.getElementById('emailCadastro').value.trim();
+            const email = document.getElementById('emailCadastro').value;
             const senha = document.getElementById('senhaCadastro').value;
-            const nome = document.getElementById('nomeCadastro').value.trim();
+            const nome = document.getElementById('nomeCadastro').value;
             
-            if (senha.length < 6) {
-                alert('❌ A senha deve ter pelo menos 6 caracteres.');
-                return;
-            }
-            
-            const btnCadastrar = document.querySelector('#formCadastro button[type="submit"]');
-            const textoBtnOriginal = btnCadastrar.textContent;
-            btnCadastrar.textContent = 'Criando conta...';
-            btnCadastrar.disabled = true;
-            
-            const { data, error } = await supabase.auth.signUp({
+            const { data, error } = await supabaseClient.auth.signUp({
                 email: email,
                 password: senha,
-                options: { 
-                    data: { 
-                        name: nome,
-                        full_name: nome
-                    } 
-                }
+                options: { data: { name: nome } }
             });
-            
-            btnCadastrar.textContent = textoBtnOriginal;
-            btnCadastrar.disabled = false;
             
             if (error) {
                 alert('❌ Erro ao criar conta: ' + error.message);
             } else {
-                // Se o cadastro foi bem sucedido, mas pode ser necessário confirmação de e-mail.
-                // Vamos dar um feedback otimizado
-                if (data.user && data.user.identities && data.user.identities.length === 0) {
-                    alert('⚠️ Este e-mail já está cadastrado. Tente fazer login ou recuperar a senha.');
-                } else {
-                    alert('✅ Conta criada com sucesso! Agora faça login com suas credenciais.');
-                    modal.classList.add('hidden');
-                    modal.classList.remove('flex');
-                    document.getElementById('formCadastro').reset();
-                    // Opcional: preencher email no login
-                    document.getElementById('email').value = email;
-                    document.getElementById('senha').value = '';
-                }
+                alert('✅ Conta criada com sucesso! Faça login.');
+                modal.classList.add('hidden');
+                document.getElementById('formCadastro').reset();
+                // Preenche o email no formulário de login
+                document.getElementById('email').value = email;
             }
         });
         
-        // Chamada inicial para verificar sessão ativa
+        // Verifica sessão ao carregar a página
         verificarSessao();
-        
-        // Adicionar pequena validação extra nos campos de login
-        const emailInput = document.getElementById('email');
-        const senhaInput = document.getElementById('senha');
-        const erroMsg = document.getElementById('mensagemErro');
-        
-        // Ao digitar, remover mensagem de erro anterior
-        emailInput.addEventListener('input', () => {
-            if (!erroMsg.classList.contains('hidden')) erroMsg.classList.add('hidden');
-        });
-        senhaInput.addEventListener('input', () => {
-            if (!erroMsg.classList.contains('hidden')) erroMsg.classList.add('hidden');
-        });
     </script>
 </body>
 </html>
