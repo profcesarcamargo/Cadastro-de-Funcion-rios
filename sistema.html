@@ -3,434 +3,441 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Cadastro de Funcionários - Secretaria Municipal de Educação de Santa Branca</title>
+    <title>Sistema de Cadastro de Funcionários</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        .foto-miniatura {
-            width: 40px;
-            height: 40px;
-            object-fit: cover;
-            border-radius: 50%;
-        }
-        .foto-perfil {
-            width: 100px;
-            height: 100px;
-            object-fit: cover;
-            border-radius: 50%;
-            border: 3px solid #3b82f6;
-        }
-        .loading {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 2px solid #f3f3f3;
-            border-top: 2px solid #3498db;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    </style>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
 </head>
-<body class="bg-gray-100">
-
-    <nav class="bg-white shadow-lg sticky top-0 z-10">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
-                <div class="flex items-center space-x-4">
-                    <div class="bg-blue-100 rounded-full p-2">
-                        <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                        </svg>
-                    </div>
-                    <h1 class="text-xl font-bold text-gray-800">Sistema de Cadastro de Funcionários</h1>
-                    <span class="text-sm text-gray-500">Secretaria Municipal de Educação de Santa Branca</span>
-                </div>
-                <button id="btnLogout" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition text-sm">
-                    Sair
-                </button>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-7xl mx-auto">
+        <div class="bg-white rounded-lg shadow p-4 mb-6 flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold">📋 Sistema de Cadastro de Funcionários</h1>
+                <p class="text-sm text-gray-600">Bem-vindo, <span id="nomeUsuario"></span></p>
+                <p class="text-xs text-blue-600" id="statusAdmin"></p>
+            </div>
+            <div class="flex gap-2">
+                <button id="btnExportarExcel" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">📊 Exportar Excel</button>
+                <button id="btnLogout" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">Sair</button>
             </div>
         </div>
-    </nav>
 
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div class="mb-6 flex justify-between items-center">
-            <h2 class="text-2xl font-bold text-gray-800">Funcionários Cadastrados</h2>
-            <button id="btnAdicionar" class="bg-green-600 text-white px-5 py-2 rounded-lg hover:bg-green-700 transition">
-                + Novo Funcionário
-            </button>
+        <div class="flex gap-2 mb-6">
+            <button id="btnAbaCadastro" class="bg-blue-500 text-white px-6 py-3 rounded-lg font-semibold">➕ NOVO CADASTRO</button>
+            <button id="btnAbaBusca" class="bg-gray-400 text-white px-6 py-3 rounded-lg font-semibold">🔍 BUSCAR FUNCIONÁRIOS</button>
+            <button id="btnAbaUsuarios" class="bg-gray-400 text-white px-6 py-3 rounded-lg font-semibold" style="display:none;">👥 GERENCIAR USUÁRIOS</button>
         </div>
 
-        <!-- Área de diagnóstico -->
-        <div id="diagnostico" class="mb-4 p-3 bg-blue-100 border border-blue-400 rounded-lg text-sm hidden"></div>
-
-        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Foto</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nome</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cargo</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">E-mail</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Telefone</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabelaFuncionarios">
-                        <tr>
-                            <td colspan="6" class="text-center py-8">
-                                <div class="loading"></div>
-                                <span class="ml-2">Carregando funcionários...</span>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal de Cadastro/Edição -->
-    <div id="modalFuncionario" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <div class="p-6">
-                <h3 id="modalTitle" class="text-xl font-bold mb-4">Cadastrar Funcionário</h3>
-                <form id="formFuncionario">
-                    <input type="hidden" id="funcionarioId">
-                    
-                    <div class="mb-3">
-                        <label class="block text-gray-700 mb-1 font-medium">Nome Completo *</label>
-                        <input type="text" id="nomeFunc" required class="w-full border border-gray-300 p-2 rounded-lg">
-                    </div>
-                    <div class="mb-3">
-                        <label class="block text-gray-700 mb-1 font-medium">Cargo *</label>
-                        <input type="text" id="cargoFunc" required class="w-full border border-gray-300 p-2 rounded-lg">
-                    </div>
-                    <div class="mb-3">
-                        <label class="block text-gray-700 mb-1 font-medium">E-mail *</label>
-                        <input type="email" id="emailFunc" required class="w-full border border-gray-300 p-2 rounded-lg">
-                    </div>
-                    <div class="mb-3">
-                        <label class="block text-gray-700 mb-1 font-medium">Telefone</label>
-                        <input type="text" id="telefoneFunc" class="w-full border border-gray-300 p-2 rounded-lg" placeholder="(00) 00000-0000">
-                    </div>
-                    <div class="mb-3">
-                        <label class="block text-gray-700 mb-1 font-medium">Link da Foto</label>
-                        <input type="text" id="fotoUrlFunc" class="w-full border border-gray-300 p-2 rounded-lg" placeholder="https://exemplo.com/foto.jpg">
-                        <div class="mt-2 flex justify-center">
-                            <img id="previewImg" class="w-16 h-16 rounded-full object-cover hidden">
-                        </div>
-                    </div>
-                    
-                    <div class="flex gap-3 mt-5">
-                        <button type="submit" class="flex-1 bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700">Salvar</button>
-                        <button type="button" id="fecharModalFunc" class="flex-1 bg-gray-300 p-2 rounded-lg hover:bg-gray-400">Cancelar</button>
-                    </div>
+        <!-- CADASTRO -->
+        <div id="abaCadastro">
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold mb-4">➕ Cadastrar Novo Funcionário</h2>
+                <form id="formFuncionario" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div><label class="block text-sm font-medium mb-1">Nome Completo *</label><input type="text" id="nomeCompleto" required class="w-full border p-2 rounded"></div>
+                    <div><label class="block text-sm font-medium mb-1">Unidade Escolar</label><input type="text" id="unidadeEscolar" class="w-full border p-2 rounded"></div>
+                    <div><label class="block text-sm font-medium mb-1">Função</label><input type="text" id="funcao" class="w-full border p-2 rounded"></div>
+                    <div><label class="block text-sm font-medium mb-1">Endereço</label><input type="text" id="endereco" class="w-full border p-2 rounded"></div>
+                    <div><label class="block text-sm font-medium mb-1">Telefone para Contato</label><input type="text" id="telefoneContato" class="w-full border p-2 rounded"></div>
+                    <div><label class="block text-sm font-medium mb-1">Telefone para Emergências</label><input type="text" id="telefoneEmergencia" class="w-full border p-2 rounded"></div>
+                    <div><label class="block text-sm font-medium mb-1">Matrícula</label><input type="number" id="matricula" class="w-full border p-2 rounded"></div>
+                    <div><label class="block text-sm font-medium mb-1">Data de Nascimento</label><input type="date" id="dataNascimento" class="w-full border p-2 rounded"></div>
+                    <div><label class="block text-sm font-medium mb-1">Local Atual de Trabalho e Função</label><input type="text" id="localTrabalho" class="w-full border p-2 rounded"></div>
+                    <div><label class="block text-sm font-medium mb-1">Cor/Raça</label><select id="corRaca" class="w-full border p-2 rounded"><option value="">Selecione</option><option>Branca</option><option>Preta</option><option>Parda</option><option>Amarela</option><option>Indígena</option></select></div>
+                    <div><label class="block text-sm font-medium mb-1">Foto (link)</label><input type="url" id="foto" class="w-full border p-2 rounded"></div>
+                    <div><label class="block text-sm font-medium mb-1">E-mail</label><input type="email" id="email" class="w-full border p-2 rounded"></div>
+                    <div><label class="block text-sm font-medium mb-1">Laudo de Restrição</label><select id="laudoRestricao" class="w-full border p-2 rounded"><option value="">Selecione</option><option>Sim</option><option>Não</option><option>Em análise</option></select></div>
+                    <div><label class="block text-sm font-medium mb-1">Cargo/Situação</label><select id="cargoSituacao" class="w-full border p-2 rounded"><option value="">Selecione</option><option>Efetivo</option><option>Comissionado</option><option>Contratado</option><option>Estagiário</option><option>Temporário</option><option>Afastado</option></select></div>
+                    <button type="submit" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 md:col-span-2">💾 SALVAR CADASTRO</button>
                 </form>
             </div>
         </div>
+
+        <!-- BUSCA -->
+        <div id="abaBusca" style="display: none;">
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold mb-4">🔍 Buscar Funcionários</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <input type="text" id="buscaNome" placeholder="Nome" class="border p-2 rounded">
+                    <input type="text" id="buscaUnidade" placeholder="Unidade" class="border p-2 rounded">
+                    <input type="text" id="buscaFuncao" placeholder="Função" class="border p-2 rounded">
+                    <input type="text" id="buscaEmail" placeholder="E-mail" class="border p-2 rounded">
+                </div>
+                <div class="flex gap-2 mb-6">
+                    <button id="btnBuscarFunc" class="bg-blue-500 text-white px-6 py-2 rounded">🔍 BUSCAR</button>
+                    <button id="btnCarregarTodos" class="bg-green-500 text-white px-6 py-2 rounded">📋 CARREGAR TODOS</button>
+                    <button id="btnLimparBuscaFunc" class="bg-gray-500 text-white px-6 py-2 rounded">🧹 LIMPAR</button>
+                </div>
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold">📊 Resultados</h3>
+                    <span id="totalResultados" class="text-sm text-gray-600">0 funcionário(s)</span>
+                </div>
+                <div id="listaFuncionarios" class="space-y-4"></div>
+            </div>
+        </div>
+
+        <!-- USUÁRIOS -->
+        <div id="abaUsuarios" style="display: none;">
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold mb-4">👥 Gerenciar Usuários Autorizados</h2>
+                <div class="mb-6">
+                    <h3 class="text-lg font-semibold mb-2">Adicionar Novo Usuário</h3>
+                    <div class="flex gap-2">
+                        <input type="email" id="novoUsuarioEmail" placeholder="E-mail" class="flex-1 border p-2 rounded">
+                        <input type="text" id="novoUsuarioNome" placeholder="Nome" class="flex-1 border p-2 rounded">
+                        <button id="btnAdicionarUsuario" class="bg-green-500 text-white px-4 py-2 rounded">Adicionar</button>
+                    </div>
+                </div>
+                <div><h3 class="text-lg font-semibold mb-2">Usuários Autorizados</h3><div id="listaUsuarios"></div></div>
+            </div>
+        </div>
     </div>
 
-    <!-- Modal Visualizar Ficha -->
-    <div id="modalFicha" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md">
-            <div class="p-6">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-xl font-bold">Ficha do Funcionário</h3>
-                    <button id="fecharFicha" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
-                </div>
-                <div id="conteudoFicha" class="text-center">
-                    <!-- Conteúdo dinâmico -->
-                </div>
-            </div>
+    <!-- MODAL EDIÇÃO -->
+    <div id="modalEdicao" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold">✏️ Editar Funcionário</h3><button onclick="fecharModalEdicao()" class="text-gray-500 text-2xl">&times;</button></div>
+            <form id="formEdicao" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input type="hidden" id="editNomeOriginal">
+                <div><label>Nome Completo</label><input type="text" id="editNomeCompleto" class="w-full border p-2 rounded"></div>
+                <div><label>Unidade Escolar</label><input type="text" id="editUnidadeEscolar" class="w-full border p-2 rounded"></div>
+                <div><label>Função</label><input type="text" id="editFuncao" class="w-full border p-2 rounded"></div>
+                <div><label>Endereço</label><input type="text" id="editEndereco" class="w-full border p-2 rounded"></div>
+                <div><label>Telefone Contato</label><input type="text" id="editTelefoneContato" class="w-full border p-2 rounded"></div>
+                <div><label>Telefone Emergência</label><input type="text" id="editTelefoneEmergencia" class="w-full border p-2 rounded"></div>
+                <div><label>Matrícula</label><input type="number" id="editMatricula" class="w-full border p-2 rounded"></div>
+                <div><label>Data Nascimento</label><input type="date" id="editDataNascimento" class="w-full border p-2 rounded"></div>
+                <div><label>Local Trabalho</label><input type="text" id="editLocalTrabalho" class="w-full border p-2 rounded"></div>
+                <div><label>Cor/Raça</label><select id="editCorRaca" class="w-full border p-2 rounded"><option value="">Selecione</option><option>Branca</option><option>Preta</option><option>Parda</option><option>Amarela</option><option>Indígena</option></select></div>
+                <div><label>Foto</label><input type="url" id="editFoto" class="w-full border p-2 rounded"></div>
+                <div><label>E-mail</label><input type="email" id="editEmail" class="w-full border p-2 rounded"></div>
+                <div><label>Laudo Restrição</label><select id="editLaudoRestricao" class="w-full border p-2 rounded"><option value="">Selecione</option><option>Sim</option><option>Não</option><option>Em análise</option></select></div>
+                <div><label>Cargo/Situação</label><select id="editCargoSituacao" class="w-full border p-2 rounded"><option value="">Selecione</option><option>Efetivo</option><option>Comissionado</option><option>Contratado</option><option>Estagiário</option><option>Temporário</option><option>Afastado</option></select></div>
+                <div class="md:col-span-2 flex gap-2 justify-end"><button type="button" onclick="fecharModalEdicao()" class="bg-gray-500 text-white px-4 py-2 rounded">Cancelar</button><button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">Salvar</button></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL DETALHES -->
+    <div id="modalDetalhes" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold">👤 Detalhes</h3><button onclick="fecharModal()" class="text-gray-500 text-2xl">&times;</button></div>
+            <div id="conteudoModal"></div>
         </div>
     </div>
 
     <script>
+        // CONFIGURAÇÃO
         const SUPABASE_URL = 'https://ndvgduxdebeiyujfrups.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kdmdkdXhkZWJlaXl1amZydXBzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4NzM4MzgsImV4cCI6MjA5MzQ0OTgzOH0.G7fWT-Ys6RLif0ce8zuHbjqbDUm6jOd8oxa9dSjPtg8';
         
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const supabaseSistema = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        let emailLogado = '';
 
-        // Verificar sessão
-        async function verificarSessao() {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session) {
-                window.location.href = 'index.html';
-                return;
+        // Elementos DOM
+        const aba1 = document.getElementById('abaCadastro');
+        const aba2 = document.getElementById('abaBusca');
+        const aba3 = document.getElementById('abaUsuarios');
+        const btn1 = document.getElementById('btnAbaCadastro');
+        const btn2 = document.getElementById('btnAbaBusca');
+        const btn3 = document.getElementById('btnAbaUsuarios');
+
+        function setAba(aba) {
+            aba1.style.display = 'none';
+            aba2.style.display = 'none';
+            aba3.style.display = 'none';
+            btn1.className = 'bg-gray-400 text-white px-6 py-3 rounded-lg font-semibold';
+            btn2.className = 'bg-gray-400 text-white px-6 py-3 rounded-lg font-semibold';
+            btn3.className = 'bg-gray-400 text-white px-6 py-3 rounded-lg font-semibold';
+            
+            if (aba === 'cadastro') {
+                aba1.style.display = 'block';
+                btn1.className = 'bg-blue-500 text-white px-6 py-3 rounded-lg font-semibold';
+            } else if (aba === 'busca') {
+                aba2.style.display = 'block';
+                btn2.className = 'bg-blue-500 text-white px-6 py-3 rounded-lg font-semibold';
+                carregarTodosFuncionarios();
+            } else if (aba === 'usuarios') {
+                aba3.style.display = 'block';
+                btn3.className = 'bg-blue-500 text-white px-6 py-3 rounded-lg font-semibold';
+                carregarUsuarios();
             }
-            console.log('✅ Usuário logado:', session.user.email);
-            carregarFuncionarios();
         }
 
-        // Carregar funcionários da tabela tblCadastro
-        async function carregarFuncionarios() {
-            console.log('🔄 Carregando funcionários da tabela tblCadastro...');
-            
-            const { data, error, status, statusText } = await supabase
-                .from('tblCadastro')
-                .select('*')
-                .order('id', { ascending: false });
-            
-            console.log('📊 Resposta do Supabase:', { data, error, status, statusText });
-            
-            if (error) {
-                console.error('❌ ERRO detalhado:', error);
-                document.getElementById('tabelaFuncionarios').innerHTML = `
-                    <tr>
-                        <td colspan="6" class="text-center py-8 text-red-500">
-                            ❌ Erro: ${error.message}<br>
-                            <span class="text-xs">Verifique o console do navegador (F12)</span>
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
-            
-            if (!data || data.length === 0) {
-                console.log('ℹ️ Nenhum funcionário encontrado na tabela tblCadastro');
-                document.getElementById('tabelaFuncionarios').innerHTML = `
-                    <tr>
-                        <td colspan="6" class="text-center py-8 text-gray-500">
-                            📋 Nenhum funcionário cadastrado.<br>
-                            Clique em "Novo Funcionário" para adicionar.
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
-            
-            console.log(`✅ ${data.length} funcionários carregados!`);
-            console.log('📋 Primeiro funcionário (para ver estrutura):', data[0]);
-            
-            // Mostrar diagnóstico com as colunas disponíveis
-            const colunas = Object.keys(data[0]);
-            document.getElementById('diagnostico').innerHTML = `
-                <strong>🔍 Diagnóstico:</strong> Tabela "tblCadastro" tem ${data.length} registros.<br>
-                <strong>Colunas encontradas:</strong> ${colunas.join(', ')}
-            `;
-            document.getElementById('diagnostico').classList.remove('hidden');
-            
-            renderizarTabela(data);
-        }
+        btn1.onclick = () => setAba('cadastro');
+        btn2.onclick = () => setAba('busca');
+        btn3.onclick = () => setAba('usuarios');
 
-        // Renderizar tabela (adaptado às colunas reais da sua tabela)
-        function renderizarTabela(funcionarios) {
-            const tbody = document.getElementById('tabelaFuncionarios');
-            tbody.innerHTML = '';
+        // Auth
+        async function verificarAuth() {
+            const { data: { session } } = await supabaseSistema.auth.getSession();
+            // === AJUSTADO: redireciona para index.html ===
+            if (!session) { window.location.href = 'index.html'; return; }
+            emailLogado = session.user.email;
+            document.getElementById('nomeUsuario').innerHTML = emailLogado;
             
-            funcionarios.forEach(func => {
-                // Mapeamento flexível de colunas
-                const nome = func.nome || func.NOME || func.name || func.Nome || '-';
-                const cargo = func.cargo || func.CARGO || func.Cargo || '-';
-                const email = func.email || func.EMAIL || func.Email || '-';
-                const telefone = func.telefone || func.TELEFONE || func.Telefone || func.phone || '-';
-                const foto = func.Foto || func.foto || func.FOTO || func.foto_url || null;
-                
-                const row = tbody.insertRow();
-                row.innerHTML = `
-                    <td class="px-4 py-3">
-                        <img src="${foto || 'https://via.placeholder.com/40?text=Sem+Foto'}" 
-                             class="foto-miniatura"
-                             onerror="this.src='https://via.placeholder.com/40?text=Erro'">
-                    </td>
-                    <td class="px-4 py-3 font-medium text-gray-900">${nome}</td>
-                    <td class="px-4 py-3 text-gray-600">${cargo}</td>
-                    <td class="px-4 py-3 text-gray-600">${email}</td>
-                    <td class="px-4 py-3 text-gray-600">${telefone}</td>
-                    <td class="px-4 py-3">
-                        <div class="flex gap-2">
-                            <button onclick="verFicha('${func.id}')" class="bg-blue-500 text-white px-3 py-1 rounded-lg text-sm hover:bg-blue-600">
-                                Ver
-                            </button>
-                            <button onclick="editarFuncionario('${func.id}')" class="bg-yellow-500 text-white px-3 py-1 rounded-lg text-sm hover:bg-yellow-600">
-                                Editar
-                            </button>
-                            <button onclick="excluirFuncionario('${func.id}')" class="bg-red-500 text-white px-3 py-1 rounded-lg text-sm hover:bg-red-600">
-                                Excluir
-                            </button>
-                        </div>
-                    </td>
-                `;
-            });
-        }
-
-        // Ver ficha do funcionário
-        window.verFicha = async function(id) {
-            const { data, error } = await supabase
-                .from('tblCadastro')
-                .select('*')
-                .eq('id', id)
-                .single();
-            
-            if (error) {
-                alert('Erro ao carregar ficha: ' + error.message);
-                return;
-            }
-            
-            const nome = data.nome || data.NOME || '-';
-            const cargo = data.cargo || data.CARGO || '-';
-            const email = data.email || data.EMAIL || '-';
-            const telefone = data.telefone || data.TELEFONE || '-';
-            const foto = data.Foto || data.foto || null;
-            
-            document.getElementById('conteudoFicha').innerHTML = `
-                <div class="flex flex-col items-center">
-                    <img src="${foto || 'https://via.placeholder.com/100?text=Sem+Foto'}" 
-                         class="foto-perfil mb-3"
-                         onerror="this.src='https://via.placeholder.com/100?text=Erro'">
-                    <h2 class="text-lg font-bold">${nome}</h2>
-                    <p class="text-blue-600 font-semibold">${cargo}</p>
-                    <hr class="my-3 w-full">
-                    <div class="w-full text-left">
-                        <p><strong>📧 E-mail:</strong> ${email}</p>
-                        <p><strong>📞 Telefone:</strong> ${telefone}</p>
-                    </div>
-                </div>
-            `;
-            
-            document.getElementById('modalFicha').classList.remove('hidden');
-            document.getElementById('modalFicha').classList.add('flex');
-        };
-
-        // Editar funcionário
-        window.editarFuncionario = async function(id) {
-            const { data, error } = await supabase
-                .from('tblCadastro')
-                .select('*')
-                .eq('id', id)
-                .single();
-            
-            if (error) {
-                alert('Erro ao carregar dados: ' + error.message);
-                return;
-            }
-            
-            document.getElementById('modalTitle').textContent = 'Editar Funcionário';
-            document.getElementById('funcionarioId').value = data.id;
-            document.getElementById('nomeFunc').value = data.nome || '';
-            document.getElementById('cargoFunc').value = data.cargo || '';
-            document.getElementById('emailFunc').value = data.email || '';
-            document.getElementById('telefoneFunc').value = data.telefone || '';
-            document.getElementById('fotoUrlFunc').value = data.Foto || data.foto || '';
-            
-            if (data.Foto || data.foto) {
-                document.getElementById('previewImg').src = data.Foto || data.foto;
-                document.getElementById('previewImg').classList.remove('hidden');
+            const isAdmin = emailLogado === 'profcesarcamargo@gmail.com';
+            if (isAdmin) {
+                document.getElementById('statusAdmin').innerHTML = '🔑 Administrador';
+                btn3.style.display = 'inline-block';
             } else {
-                document.getElementById('previewImg').classList.add('hidden');
+                document.getElementById('statusAdmin').innerHTML = '👤 Usuário autorizado';
+                btn3.style.display = 'none';
             }
-            
-            document.getElementById('modalFuncionario').classList.remove('hidden');
-            document.getElementById('modalFuncionario').classList.add('flex');
-        };
+        }
 
-        // Excluir funcionário
-        window.excluirFuncionario = async function(id) {
-            if (confirm('Tem certeza que deseja excluir este funcionário?')) {
-                const { error } = await supabase
-                    .from('tblCadastro')
-                    .delete()
-                    .eq('id', id);
-                
-                if (error) {
-                    alert('Erro ao excluir: ' + error.message);
-                } else {
-                    alert('Funcionário excluído!');
-                    carregarFuncionarios();
-                }
-            }
-        };
+        // === AJUSTADO: logout redireciona para index.html ===
+        document.getElementById('btnLogout').onclick = async () => { await supabaseSistema.auth.signOut(); window.location.href = 'index.html'; };
 
-        // Salvar funcionário
-        document.getElementById('formFuncionario').addEventListener('submit', async (e) => {
+        // CADASTRO
+        document.getElementById('formFuncionario').onsubmit = async (e) => {
             e.preventDefault();
-            
-            const id = document.getElementById('funcionarioId').value;
             const dados = {
-                nome: document.getElementById('nomeFunc').value,
-                cargo: document.getElementById('cargoFunc').value,
-                email: document.getElementById('emailFunc').value,
-                telefone: document.getElementById('telefoneFunc').value,
-                Foto: document.getElementById('fotoUrlFunc').value || null
+                "Nome Completo": document.getElementById('nomeCompleto').value,
+                "Unidade Escolar": document.getElementById('unidadeEscolar').value || null,
+                "Função": document.getElementById('funcao').value || null,
+                "Endereço": document.getElementById('endereco').value || null,
+                "Telefone para Contato": document.getElementById('telefoneContato').value || null,
+                "Telefone para Emergências": document.getElementById('telefoneEmergencia').value || null,
+                "Matrícula": document.getElementById('matricula').value ? parseFloat(document.getElementById('matricula').value) : null,
+                "Data de Nascimento": document.getElementById('dataNascimento').value || null,
+                "Local Atual de Trabalho e Função": document.getElementById('localTrabalho').value || null,
+                "Cor/Raça": document.getElementById('corRaca').value || null,
+                "Foto (link da foto)": document.getElementById('foto').value || null,
+                "E-mail": document.getElementById('email').value || null,
+                "Laudo de Restrição": document.getElementById('laudoRestricao').value || null,
+                "Cargo/Situação": document.getElementById('cargoSituacao').value || null
             };
-            
-            console.log('💾 Salvando dados:', dados);
-            
-            let result;
-            if (id) {
-                result = await supabase
-                    .from('tblCadastro')
-                    .update(dados)
-                    .eq('id', id);
-            } else {
-                result = await supabase
-                    .from('tblCadastro')
-                    .insert([dados]);
-            }
-            
-            if (result.error) {
-                console.error('❌ Erro ao salvar:', result.error);
-                alert('Erro ao salvar: ' + result.error.message);
-            } else {
-                console.log('✅ Salvo com sucesso!');
-                alert(id ? 'Funcionário atualizado!' : 'Funcionário cadastrado!');
-                fecharModalFuncionario();
-                carregarFuncionarios();
-            }
-        });
+            const { error } = await supabaseSistema.from('tblCadastro').insert([dados]);
+            if (error) alert('❌ Erro: ' + error.message);
+            else { alert('✅ Cadastrado!'); document.getElementById('formFuncionario').reset(); }
+        };
 
-        // Preview da foto
-        document.getElementById('fotoUrlFunc').addEventListener('input', (e) => {
-            const url = e.target.value;
-            if (url && url.startsWith('http')) {
-                document.getElementById('previewImg').src = url;
-                document.getElementById('previewImg').classList.remove('hidden');
-            } else {
-                document.getElementById('previewImg').classList.add('hidden');
+        // FUNÇÃO PARA CARREGAR TODOS OS FUNCIONÁRIOS
+        async function carregarTodosFuncionarios() {
+            console.log('Carregando todos os funcionários...');
+            const { data, error } = await supabaseSistema
+                .from('tblCadastro')
+                .select('*')
+                .order('"Nome Completo"');
+            
+            if (error) { 
+                alert('Erro: ' + error.message);
+                console.error(error);
+                return; 
             }
-        });
-
-        // Fechar modal
-        function fecharModalFuncionario() {
-            document.getElementById('modalFuncionario').classList.add('hidden');
-            document.getElementById('modalFuncionario').classList.remove('flex');
-            document.getElementById('formFuncionario').reset();
-            document.getElementById('funcionarioId').value = '';
-            document.getElementById('modalTitle').textContent = 'Cadastrar Funcionário';
-            document.getElementById('previewImg').classList.add('hidden');
+            
+            console.log('Dados carregados:', data);
+            document.getElementById('totalResultados').innerHTML = data.length + ' funcionário(s)';
+            
+            if (data.length === 0) { 
+                document.getElementById('listaFuncionarios').innerHTML = '<p class="text-center text-gray-500 py-8">Nenhum funcionário cadastrado</p>'; 
+                return; 
+            }
+            
+            let html = '';
+            for (const f of data) {
+                const nomeEsc = (f['Nome Completo'] || '').replace(/'/g, "\\'");
+                html += `<div class="border rounded-lg p-4 hover:shadow">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="font-bold text-lg">${f['Nome Completo'] || '-'}</h3>
+                            <p class="text-gray-600">${f['Função'] || '-'} | ${f['Unidade Escolar'] || '-'}</p>
+                            <p class="text-sm text-gray-500">📧 ${f['E-mail'] || '-'} | 📱 ${f['Telefone para Contato'] || '-'}</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick='verDetalhes("${nomeEsc}")' class="bg-blue-500 text-white px-3 py-1 rounded">Ver</button>
+                            <button onclick='abrirEdicao("${nomeEsc}")' class="bg-yellow-500 text-white px-3 py-1 rounded">✏️ Editar</button>
+                            <button onclick='excluirFuncionario("${nomeEsc}")' class="bg-red-500 text-white px-3 py-1 rounded">Excluir</button>
+                        </div>
+                    </div>
+                </div>`;
+            }
+            document.getElementById('listaFuncionarios').innerHTML = html;
         }
 
-        document.getElementById('btnAdicionar').addEventListener('click', () => {
-            fecharModalFuncionario();
-            document.getElementById('modalFuncionario').classList.remove('hidden');
-            document.getElementById('modalFuncionario').classList.add('flex');
-        });
-
-        document.getElementById('fecharModalFunc').addEventListener('click', fecharModalFuncionario);
-        document.getElementById('fecharFicha').addEventListener('click', () => {
-            document.getElementById('modalFicha').classList.add('hidden');
-        });
-
-        document.getElementById('btnLogout').addEventListener('click', async () => {
-            await supabase.auth.signOut();
-            window.location.href = 'index.html';
-        });
-
-        // Fechar modais clicando fora
-        document.getElementById('modalFuncionario').addEventListener('click', (e) => {
-            if (e.target === document.getElementById('modalFuncionario')) fecharModalFuncionario();
-        });
-        document.getElementById('modalFicha').addEventListener('click', (e) => {
-            if (e.target === document.getElementById('modalFicha')) {
-                document.getElementById('modalFicha').classList.add('hidden');
+        // BUSCAR COM FILTROS
+        async function buscarComFiltros() {
+            let query = supabaseSistema.from('tblCadastro').select('*');
+            
+            const nome = document.getElementById('buscaNome').value;
+            if (nome) query = query.ilike('"Nome Completo"', `%${nome}%`);
+            
+            const unidade = document.getElementById('buscaUnidade').value;
+            if (unidade) query = query.ilike('"Unidade Escolar"', `%${unidade}%`);
+            
+            const funcao = document.getElementById('buscaFuncao').value;
+            if (funcao) query = query.ilike('"Função"', `%${funcao}%`);
+            
+            const email = document.getElementById('buscaEmail').value;
+            if (email) query = query.ilike('"E-mail"', `%${email}%`);
+            
+            const { data, error } = await query.order('"Nome Completo"');
+            
+            if (error) { 
+                alert('Erro: ' + error.message);
+                return; 
             }
-        });
+            
+            document.getElementById('totalResultados').innerHTML = data.length + ' funcionário(s)';
+            
+            if (data.length === 0) { 
+                document.getElementById('listaFuncionarios').innerHTML = '<p class="text-center text-gray-500 py-8">Nenhum funcionário encontrado</p>'; 
+                return; 
+            }
+            
+            let html = '';
+            for (const f of data) {
+                const nomeEsc = (f['Nome Completo'] || '').replace(/'/g, "\\'");
+                html += `<div class="border rounded-lg p-4 hover:shadow">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="font-bold text-lg">${f['Nome Completo'] || '-'}</h3>
+                            <p class="text-gray-600">${f['Função'] || '-'} | ${f['Unidade Escolar'] || '-'}</p>
+                            <p class="text-sm text-gray-500">📧 ${f['E-mail'] || '-'} | 📱 ${f['Telefone para Contato'] || '-'}</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick='verDetalhes("${nomeEsc}")' class="bg-blue-500 text-white px-3 py-1 rounded">Ver</button>
+                            <button onclick='abrirEdicao("${nomeEsc}")' class="bg-yellow-500 text-white px-3 py-1 rounded">✏️ Editar</button>
+                            <button onclick='excluirFuncionario("${nomeEsc}")' class="bg-red-500 text-white px-3 py-1 rounded">Excluir</button>
+                        </div>
+                    </div>
+                </div>`;
+            }
+            document.getElementById('listaFuncionarios').innerHTML = html;
+        }
 
-        verificarSessao();
+        // EDIÇÃO
+        window.abrirEdicao = async function(nome) {
+            const { data } = await supabaseSistema.from('tblCadastro').select('*').eq('"Nome Completo"', nome).single();
+            if (!data) return;
+            document.getElementById('editNomeOriginal').value = nome;
+            document.getElementById('editNomeCompleto').value = data['Nome Completo'] || '';
+            document.getElementById('editUnidadeEscolar').value = data['Unidade Escolar'] || '';
+            document.getElementById('editFuncao').value = data['Função'] || '';
+            document.getElementById('editEndereco').value = data['Endereço'] || '';
+            document.getElementById('editTelefoneContato').value = data['Telefone para Contato'] || '';
+            document.getElementById('editTelefoneEmergencia').value = data['Telefone para Emergências'] || '';
+            document.getElementById('editMatricula').value = data['Matrícula'] || '';
+            document.getElementById('editDataNascimento').value = data['Data de Nascimento'] || '';
+            document.getElementById('editLocalTrabalho').value = data['Local Atual de Trabalho e Função'] || '';
+            document.getElementById('editCorRaca').value = data['Cor/Raça'] || '';
+            document.getElementById('editFoto').value = data['Foto (link da foto)'] || '';
+            document.getElementById('editEmail').value = data['E-mail'] || '';
+            document.getElementById('editLaudoRestricao').value = data['Laudo de Restrição'] || '';
+            document.getElementById('editCargoSituacao').value = data['Cargo/Situação'] || '';
+            document.getElementById('modalEdicao').classList.remove('hidden');
+            document.getElementById('modalEdicao').classList.add('flex');
+        };
+
+        document.getElementById('formEdicao').onsubmit = async (e) => {
+            e.preventDefault();
+            const nomeOriginal = document.getElementById('editNomeOriginal').value;
+            const dados = {
+                "Nome Completo": document.getElementById('editNomeCompleto').value,
+                "Unidade Escolar": document.getElementById('editUnidadeEscolar').value || null,
+                "Função": document.getElementById('editFuncao').value || null,
+                "Endereço": document.getElementById('editEndereco').value || null,
+                "Telefone para Contato": document.getElementById('editTelefoneContato').value || null,
+                "Telefone para Emergências": document.getElementById('editTelefoneEmergencia').value || null,
+                "Matrícula": document.getElementById('editMatricula').value ? parseFloat(document.getElementById('editMatricula').value) : null,
+                "Data de Nascimento": document.getElementById('editDataNascimento').value || null,
+                "Local Atual de Trabalho e Função": document.getElementById('editLocalTrabalho').value || null,
+                "Cor/Raça": document.getElementById('editCorRaca').value || null,
+                "Foto (link da foto)": document.getElementById('editFoto').value || null,
+                "E-mail": document.getElementById('editEmail').value || null,
+                "Laudo de Restrição": document.getElementById('editLaudoRestricao').value || null,
+                "Cargo/Situação": document.getElementById('editCargoSituacao').value || null
+            };
+            const { error } = await supabaseSistema.from('tblCadastro').update(dados).eq('"Nome Completo"', nomeOriginal);
+            if (error) alert('❌ Erro: ' + error.message);
+            else { alert('✅ Atualizado!'); fecharModalEdicao(); carregarTodosFuncionarios(); }
+        };
+
+        window.fecharModalEdicao = function() {
+            const modal = document.getElementById('modalEdicao');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        };
+
+        // DETALHES
+        window.verDetalhes = async function(nome) {
+            const { data } = await supabaseSistema.from('tblCadastro').select('*').eq('"Nome Completo"', nome).single();
+            if (!data) return;
+            let html = '<div class="grid grid-cols-2 gap-3">';
+            for (const [key, value] of Object.entries(data)) {
+                html += `<div class="bg-gray-50 p-3 rounded"><strong>${key}:</strong><br>${value || '-'}</div>`;
+            }
+            html += '</div>';
+            document.getElementById('conteudoModal').innerHTML = html;
+            document.getElementById('modalDetalhes').classList.remove('hidden');
+            document.getElementById('modalDetalhes').classList.add('flex');
+        };
+
+        // EXCLUIR
+        window.excluirFuncionario = async function(nome) {
+            if (confirm(`Excluir ${nome}?`)) {
+                const { error } = await supabaseSistema.from('tblCadastro').delete().eq('"Nome Completo"', nome);
+                if (error) alert('Erro: ' + error.message);
+                else { alert('✅ Excluído!'); carregarTodosFuncionarios(); }
+            }
+        };
+
+        // EXPORTAR EXCEL
+        document.getElementById('btnExportarExcel').onclick = async () => {
+            const { data } = await supabaseSistema.from('tblCadastro').select('*').order('"Nome Completo"');
+            if (!data || data.length === 0) { alert('Nenhum dado para exportar'); return; }
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Funcionarios');
+            XLSX.writeFile(wb, `funcionarios_${new Date().toISOString().split('T')[0]}.xlsx`);
+        };
+
+        // USUÁRIOS
+        async function carregarUsuarios() {
+            const { data } = await supabaseSistema.from('usuarios_autorizados').select('*').order('criado_em');
+            if (!data || data.length === 0) { document.getElementById('listaUsuarios').innerHTML = '<p class="text-center text-gray-500 py-4">Nenhum usuário</p>'; return; }
+            let html = '<table class="min-w-full border"><thead class="bg-gray-50"><tr><th class="px-4 py-2">E-mail</th><th class="px-4 py-2">Nome</th><th class="px-4 py-2">Data</th><th class="px-4 py-2">Ações</th></tr></thead><tbody>';
+            for (const u of data) {
+                html += `<tr class="border-t"><td class="px-4 py-2">${u.email}</td><td class="px-4 py-2">${u.nome || '-'}</td><td class="px-4 py-2">${new Date(u.criado_em).toLocaleDateString()}</td><td class="px-4 py-2 text-center">${u.email !== 'profcesarcamargo@gmail.com' ? `<button onclick="removerUsuario('${u.email}')" class="bg-red-500 text-white px-2 py-1 rounded text-sm">Remover</button>` : '<span class="text-gray-400">Admin</span>'}</td></tr>`;
+            }
+            html += '</tbody></table>';
+            document.getElementById('listaUsuarios').innerHTML = html;
+        }
+
+        window.removerUsuario = async function(email) {
+            if (confirm(`Remover ${email}?`)) {
+                await supabaseSistema.from('usuarios_autorizados').delete().eq('email', email);
+                carregarUsuarios();
+            }
+        };
+
+        document.getElementById('btnAdicionarUsuario').onclick = async () => {
+            const email = document.getElementById('novoUsuarioEmail').value;
+            const nome = document.getElementById('novoUsuarioNome').value;
+            if (!email) { alert('Digite um e-mail'); return; }
+            const { error } = await supabaseSistema.from('usuarios_autorizados').insert([{ email, nome, criado_por: emailLogado }]);
+            if (error) alert('Erro: ' + error.message);
+            else { alert('✅ Usuário autorizado!'); document.getElementById('novoUsuarioEmail').value = ''; document.getElementById('novoUsuarioNome').value = ''; carregarUsuarios(); }
+        };
+
+        // Eventos busca
+        document.getElementById('btnBuscarFunc').onclick = buscarComFiltros;
+        document.getElementById('btnCarregarTodos').onclick = carregarTodosFuncionarios;
+        document.getElementById('btnLimparBuscaFunc').onclick = () => {
+            document.getElementById('buscaNome').value = '';
+            document.getElementById('buscaUnidade').value = '';
+            document.getElementById('buscaFuncao').value = '';
+            document.getElementById('buscaEmail').value = '';
+            carregarTodosFuncionarios();
+        };
+
+        window.fecharModal = function() {
+            const modal = document.getElementById('modalDetalhes');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        };
+
+        verificarAuth();
     </script>
 </body>
 </html>
