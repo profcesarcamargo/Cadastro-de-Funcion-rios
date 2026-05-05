@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Cadastro de Funcionários</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-7xl mx-auto">
+        <div class="bg-white rounded-lg shadow p-4 mb-6 flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold">📋 Sistema de Cadastro de Funcionários</h1>
+                <p class="text-sm text-gray-600">Bem-vindo, <span id="nomeUsuario"></span></p>
+                <p class="text-xs text-blue-600" id="statusAdmin"></p>
+            </div>
+            <div class="flex gap-2">
+                <button id="btnExportarExcel" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">📊 Exportar Excel</button>
+                <button id="btnLogout" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">Sair</button>
+            </div>
+        </div>
+
+        <div class="flex gap-2 mb-6">
+            <button id="btnAbaCadastro" class="bg-blue-500 text-white px-6 py-3 rounded-lg font-semibold">➕ NOVO CADASTRO</button>
+            <button id="btnAbaBusca" class="bg-gray-400 text-white px-6 py-3 rounded-lg font-semibold">🔍 BUSCAR FUNCIONÁRIOS</button>
+            <button id="btnAbaUsuarios" class="bg-gray-400 text-white px-6 py-3 rounded-lg font-semibold" style="display:none;">👥 GERENCIAR USUÁRIOS</button>
+        </div>
+
+        <!-- CADASTRO -->
+        <div id="abaCadastro">
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold mb-4">➕ Cadastrar Novo Funcionário</h2>
+                <form id="formFuncionario" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div><label class="block text-sm font-medium mb-1">Nome Completo *</label><input type="text" id="nomeCompleto" required class="w-full border p-2 rounded"></div>
+                    <div><label class="block text-sm font-medium mb-1">Unidade Escolar</label><input type="text" id="unidadeEscolar" class="w-full border p-2 rounded"></div>
+                    <div><label class="block text-sm font-medium mb-1">Função</label><input type="text" id="funcao" class="w-full border p-2 rounded"></div>
+                    <div><label class="block text-sm font-medium mb-1">Endereço</label><input type="text" id="endereco" class="w-full border p-2 rounded"></div>
+                    <div><label class="block text-sm font-medium mb-1">Telefone para Contato</label><input type="text" id="telefoneContato" class="w-full border p-2 rounded"></div>
+                    <div><label class="block text-sm font-medium mb-1">Telefone para Emergências</label><input type="text" id="telefoneEmergencia" class="w-full border p-2 rounded"></div>
+                    <div><label class="block text-sm font-medium mb-1">Matrícula</label><input type="number" id="matricula" class="w-full border p-2 rounded"></div>
+                    <div><label class="block text-sm font-medium mb-1">Data de Nascimento</label><input type="date" id="dataNascimento" class="w-full border p-2 rounded"></div>
+                    <div><label class="block text-sm font-medium mb-1">Local Atual de Trabalho e Função</label><input type="text" id="localTrabalho" class="w-full border p-2 rounded"></div>
+                    <div><label class="block text-sm font-medium mb-1">Cor/Raça</label><select id="corRaca" class="w-full border p-2 rounded"><option value="">Selecione</option><option>Branca</option><option>Preta</option><option>Parda</option><option>Amarela</option><option>Indígena</option></select></div>
+                    <div><label class="block text-sm font-medium mb-1">Foto (link)</label><input type="url" id="foto" class="w-full border p-2 rounded"></div>
+                    <div><label class="block text-sm font-medium mb-1">E-mail</label><input type="email" id="email" class="w-full border p-2 rounded"></div>
+                    <div><label class="block text-sm font-medium mb-1">Laudo de Restrição</label><select id="laudoRestricao" class="w-full border p-2 rounded"><option value="">Selecione</option><option>Sim</option><option>Não</option><option>Em análise</option></select></div>
+                    <div><label class="block text-sm font-medium mb-1">Cargo/Situação</label><select id="cargoSituacao" class="w-full border p-2 rounded"><option value="">Selecione</option><option>Efetivo</option><option>Comissionado</option><option>Contratado</option><option>Estagiário</option><option>Temporário</option><option>Afastado</option></select></div>
+                    <button type="submit" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 md:col-span-2">💾 SALVAR CADASTRO</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- BUSCA -->
+        <div id="abaBusca" style="display: none;">
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold mb-4">🔍 Buscar Funcionários</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <input type="text" id="buscaNome" placeholder="Nome" class="border p-2 rounded">
+                    <input type="text" id="buscaUnidade" placeholder="Unidade" class="border p-2 rounded">
+                    <input type="text" id="buscaFuncao" placeholder="Função" class="border p-2 rounded">
+                    <input type="text" id="buscaEmail" placeholder="E-mail" class="border p-2 rounded">
+                </div>
+                <div class="flex gap-2 mb-6">
+                    <button id="btnBuscarFunc" class="bg-blue-500 text-white px-6 py-2 rounded">🔍 BUSCAR</button>
+                    <button id="btnCarregarTodos" class="bg-green-500 text-white px-6 py-2 rounded">📋 CARREGAR TODOS</button>
+                    <button id="btnLimparBuscaFunc" class="bg-gray-500 text-white px-6 py-2 rounded">🧹 LIMPAR</button>
+                </div>
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold">📊 Resultados</h3>
+                    <span id="totalResultados" class="text-sm text-gray-600">0 funcionário(s)</span>
+                </div>
+                <div id="listaFuncionarios" class="space-y-4"></div>
+            </div>
+        </div>
+
+        <!-- USUÁRIOS -->
+        <div id="abaUsuarios" style="display: none;">
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold mb-4">👥 Gerenciar Usuários Autorizados</h2>
+                <div class="mb-6">
+                    <h3 class="text-lg font-semibold mb-2">Adicionar Novo Usuário</h3>
+                    <div class="flex gap-2">
+                        <input type="email" id="novoUsuarioEmail" placeholder="E-mail" class="flex-1 border p-2 rounded">
+                        <input type="text" id="novoUsuarioNome" placeholder="Nome" class="flex-1 border p-2 rounded">
+                        <button id="btnAdicionarUsuario" class="bg-green-500 text-white px-4 py-2 rounded">Adicionar</button>
+                    </div>
+                </div>
+                <div><h3 class="text-lg font-semibold mb-2">Usuários Autorizados</h3><div id="listaUsuarios"></div></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL EDIÇÃO -->
+    <div id="modalEdicao" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold">✏️ Editar Funcionário</h3><button onclick="fecharModalEdicao()" class="text-gray-500 text-2xl">&times;</button></div>
+            <form id="formEdicao" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input type="hidden" id="editNomeOriginal">
+                <div><label>Nome Completo</label><input type="text" id="editNomeCompleto" class="w-full border p-2 rounded"></div>
+                <div><label>Unidade Escolar</label><input type="text" id="editUnidadeEscolar" class="w-full border p-2 rounded"></div>
+                <div><label>Função</label><input type="text" id="editFuncao" class="w-full border p-2 rounded"></div>
+                <div><label>Endereço</label><input type="text" id="editEndereco" class="w-full border p-2 rounded"></div>
+                <div><label>Telefone Contato</label><input type="text" id="editTelefoneContato" class="w-full border p-2 rounded"></div>
+                <div><label>Telefone Emergência</label><input type="text" id="editTelefoneEmergencia" class="w-full border p-2 rounded"></div>
+                <div><label>Matrícula</label><input type="number" id="editMatricula" class="w-full border p-2 rounded"></div>
+                <div><label>Data Nascimento</label><input type="date" id="editDataNascimento" class="w-full border p-2 rounded"></div>
+                <div><label>Local Trabalho</label><input type="text" id="editLocalTrabalho" class="w-full border p-2 rounded"></div>
+                <div><label>Cor/Raça</label><select id="editCorRaca" class="w-full border p-2 rounded"><option value="">Selecione</option><option>Branca</option><option>Preta</option><option>Parda</option><option>Amarela</option><option>Indígena</option></select></div>
+                <div><label>Foto</label><input type="url" id="editFoto" class="w-full border p-2 rounded"></div>
+                <div><label>E-mail</label><input type="email" id="editEmail" class="w-full border p-2 rounded"></div>
+                <div><label>Laudo Restrição</label><select id="editLaudoRestricao" class="w-full border p-2 rounded"><option value="">Selecione</option><option>Sim</option><option>Não</option><option>Em análise</option></select></div>
+                <div><label>Cargo/Situação</label><select id="editCargoSituacao" class="w-full border p-2 rounded"><option value="">Selecione</option><option>Efetivo</option><option>Comissionado</option><option>Contratado</option><option>Estagiário</option><option>Temporário</option><option>Afastado</option></select></div>
+                <div class="md:col-span-2 flex gap-2 justify-end"><button type="button" onclick="fecharModalEdicao()" class="bg-gray-500 text-white px-4 py-2 rounded">Cancelar</button><button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">Salvar</button></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL DETALHES -->
+    <div id="modalDetalhes" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold">👤 Detalhes</h3><button onclick="fecharModal()" class="text-gray-500 text-2xl">&times;</button></div>
+            <div id="conteudoModal"></div>
+        </div>
+    </div>
+
+    <script>
+        // CONFIGURAÇÃO
+        const SUPABASE_URL = 'https://ndvgduxdebeiyujfrups.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kdmdkdXhkZWJlaXl1amZydXBzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4NzM4MzgsImV4cCI6MjA5MzQ0OTgzOH0.G7fWT-Ys6RLif0ce8zuHbjqbDUm6jOd8oxa9dSjPtg8';
+        
+        const supabaseSistema = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        let emailLogado = '';
+
+        // Elementos DOM
+        const aba1 = document.getElementById('abaCadastro');
+        const aba2 = document.getElementById('abaBusca');
+        const aba3 = document.getElementById('abaUsuarios');
+        const btn1 = document.getElementById('btnAbaCadastro');
+        const btn2 = document.getElementById('btnAbaBusca');
+        const btn3 = document.getElementById('btnAbaUsuarios');
+
+        function setAba(aba) {
+            aba1.style.display = 'none';
+            aba2.style.display = 'none';
+            aba3.style.display = 'none';
+            btn1.className = 'bg-gray-400 text-white px-6 py-3 rounded-lg font-semibold';
+            btn2.className = 'bg-gray-400 text-white px-6 py-3 rounded-lg font-semibold';
+            btn3.className = 'bg-gray-400 text-white px-6 py-3 rounded-lg font-semibold';
+            
+            if (aba === 'cadastro') {
+                aba1.style.display = 'block';
+                btn1.className = 'bg-blue-500 text-white px-6 py-3 rounded-lg font-semibold';
+            } else if (aba === 'busca') {
+                aba2.style.display = 'block';
+                btn2.className = 'bg-blue-500 text-white px-6 py-3 rounded-lg font-semibold';
+                carregarTodosFuncionarios();
+            } else if (aba === 'usuarios') {
+                aba3.style.display = 'block';
+                btn3.className = 'bg-blue-500 text-white px-6 py-3 rounded-lg font-semibold';
+                carregarUsuarios();
+            }
+        }
+
+        btn1.onclick = () => setAba('cadastro');
+        btn2.onclick = () => setAba('busca');
+        btn3.onclick = () => setAba('usuarios');
+
+        // Auth
+        async function verificarAuth() {
+            const { data: { session } } = await supabaseSistema.auth.getSession();
+            // === AJUSTADO: redireciona para index.html ===
+            if (!session) { window.location.href = 'index.html'; return; }
+            emailLogado = session.user.email;
+            document.getElementById('nomeUsuario').innerHTML = emailLogado;
+            
+            const isAdmin = emailLogado === 'profcesarcamargo@gmail.com';
+            if (isAdmin) {
+                document.getElementById('statusAdmin').innerHTML = '🔑 Administrador';
+                btn3.style.display = 'inline-block';
+            } else {
+                document.getElementById('statusAdmin').innerHTML = '👤 Usuário autorizado';
+                btn3.style.display = 'none';
+            }
+        }
+
+        // === AJUSTADO: logout redireciona para index.html ===
+        document.getElementById('btnLogout').onclick = async () => { await supabaseSistema.auth.signOut(); window.location.href = 'index.html'; };
+
+        // CADASTRO
+        document.getElementById('formFuncionario').onsubmit = async (e) => {
+            e.preventDefault();
+            const dados = {
+                "Nome Completo": document.getElementById('nomeCompleto').value,
+                "Unidade Escolar": document.getElementById('unidadeEscolar').value || null,
+                "Função": document.getElementById('funcao').value || null,
+                "Endereço": document.getElementById('endereco').value || null,
+                "Telefone para Contato": document.getElementById('telefoneContato').value || null,
+                "Telefone para Emergências": document.getElementById('telefoneEmergencia').value || null,
+                "Matrícula": document.getElementById('matricula').value ? parseFloat(document.getElementById('matricula').value) : null,
+                "Data de Nascimento": document.getElementById('dataNascimento').value || null,
+                "Local Atual de Trabalho e Função": document.getElementById('localTrabalho').value || null,
+                "Cor/Raça": document.getElementById('corRaca').value || null,
+                "Foto (link da foto)": document.getElementById('foto').value || null,
+                "E-mail": document.getElementById('email').value || null,
+                "Laudo de Restrição": document.getElementById('laudoRestricao').value || null,
+                "Cargo/Situação": document.getElementById('cargoSituacao').value || null
+            };
+            const { error } = await supabaseSistema.from('tblCadastro').insert([dados]);
+            if (error) alert('❌ Erro: ' + error.message);
+            else { alert('✅ Cadastrado!'); document.getElementById('formFuncionario').reset(); }
+        };
+
+        // FUNÇÃO PARA CARREGAR TODOS OS FUNCIONÁRIOS
+        async function carregarTodosFuncionarios() {
+            console.log('Carregando todos os funcionários...');
+            const { data, error } = await supabaseSistema
+                .from('tblCadastro')
+                .select('*')
+                .order('"Nome Completo"');
+            
+            if (error) { 
+                alert('Erro: ' + error.message);
+                console.error(error);
+                return; 
+            }
+            
+            console.log('Dados carregados:', data);
+            document.getElementById('totalResultados').innerHTML = data.length + ' funcionário(s)';
+            
+            if (data.length === 0) { 
+                document.getElementById('listaFuncionarios').innerHTML = '<p class="text-center text-gray-500 py-8">Nenhum funcionário cadastrado</p>'; 
+                return; 
+            }
+            
+            let html = '';
+            for (const f of data) {
+                const nomeEsc = (f['Nome Completo'] || '').replace(/'/g, "\\'");
+                html += `<div class="border rounded-lg p-4 hover:shadow">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="font-bold text-lg">${f['Nome Completo'] || '-'}</h3>
+                            <p class="text-gray-600">${f['Função'] || '-'} | ${f['Unidade Escolar'] || '-'}</p>
+                            <p class="text-sm text-gray-500">📧 ${f['E-mail'] || '-'} | 📱 ${f['Telefone para Contato'] || '-'}</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick='verDetalhes("${nomeEsc}")' class="bg-blue-500 text-white px-3 py-1 rounded">Ver</button>
+                            <button onclick='abrirEdicao("${nomeEsc}")' class="bg-yellow-500 text-white px-3 py-1 rounded">✏️ Editar</button>
+                            <button onclick='excluirFuncionario("${nomeEsc}")' class="bg-red-500 text-white px-3 py-1 rounded">Excluir</button>
+                        </div>
+                    </div>
+                </div>`;
+            }
+            document.getElementById('listaFuncionarios').innerHTML = html;
+        }
+
+        // BUSCAR COM FILTROS
+        async function buscarComFiltros() {
+            let query = supabaseSistema.from('tblCadastro').select('*');
+            
+            const nome = document.getElementById('buscaNome').value;
+            if (nome) query = query.ilike('"Nome Completo"', `%${nome}%`);
+            
+            const unidade = document.getElementById('buscaUnidade').value;
+            if (unidade) query = query.ilike('"Unidade Escolar"', `%${unidade}%`);
+            
+            const funcao = document.getElementById('buscaFuncao').value;
+            if (funcao) query = query.ilike('"Função"', `%${funcao}%`);
+            
+            const email = document.getElementById('buscaEmail').value;
+            if (email) query = query.ilike('"E-mail"', `%${email}%`);
+            
+            const { data, error } = await query.order('"Nome Completo"');
+            
+            if (error) { 
+                alert('Erro: ' + error.message);
+                return; 
+            }
+            
+            document.getElementById('totalResultados').innerHTML = data.length + ' funcionário(s)';
+            
+            if (data.length === 0) { 
+                document.getElementById('listaFuncionarios').innerHTML = '<p class="text-center text-gray-500 py-8">Nenhum funcionário encontrado</p>'; 
+                return; 
+            }
+            
+            let html = '';
+            for (const f of data) {
+                const nomeEsc = (f['Nome Completo'] || '').replace(/'/g, "\\'");
+                html += `<div class="border rounded-lg p-4 hover:shadow">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="font-bold text-lg">${f['Nome Completo'] || '-'}</h3>
+                            <p class="text-gray-600">${f['Função'] || '-'} | ${f['Unidade Escolar'] || '-'}</p>
+                            <p class="text-sm text-gray-500">📧 ${f['E-mail'] || '-'} | 📱 ${f['Telefone para Contato'] || '-'}</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick='verDetalhes("${nomeEsc}")' class="bg-blue-500 text-white px-3 py-1 rounded">Ver</button>
+                            <button onclick='abrirEdicao("${nomeEsc}")' class="bg-yellow-500 text-white px-3 py-1 rounded">✏️ Editar</button>
+                            <button onclick='excluirFuncionario("${nomeEsc}")' class="bg-red-500 text-white px-3 py-1 rounded">Excluir</button>
+                        </div>
+                    </div>
+                </div>`;
+            }
+            document.getElementById('listaFuncionarios').innerHTML = html;
+        }
+
+        // EDIÇÃO
+        window.abrirEdicao = async function(nome) {
+            const { data } = await supabaseSistema.from('tblCadastro').select('*').eq('"Nome Completo"', nome).single();
+            if (!data) return;
+            document.getElementById('editNomeOriginal').value = nome;
+            document.getElementById('editNomeCompleto').value = data['Nome Completo'] || '';
+            document.getElementById('editUnidadeEscolar').value = data['Unidade Escolar'] || '';
+            document.getElementById('editFuncao').value = data['Função'] || '';
+            document.getElementById('editEndereco').value = data['Endereço'] || '';
+            document.getElementById('editTelefoneContato').value = data['Telefone para Contato'] || '';
+            document.getElementById('editTelefoneEmergencia').value = data['Telefone para Emergências'] || '';
+            document.getElementById('editMatricula').value = data['Matrícula'] || '';
+            document.getElementById('editDataNascimento').value = data['Data de Nascimento'] || '';
+            document.getElementById('editLocalTrabalho').value = data['Local Atual de Trabalho e Função'] || '';
+            document.getElementById('editCorRaca').value = data['Cor/Raça'] || '';
+            document.getElementById('editFoto').value = data['Foto (link da foto)'] || '';
+            document.getElementById('editEmail').value = data['E-mail'] || '';
+            document.getElementById('editLaudoRestricao').value = data['Laudo de Restrição'] || '';
+            document.getElementById('editCargoSituacao').value = data['Cargo/Situação'] || '';
+            document.getElementById('modalEdicao').classList.remove('hidden');
+            document.getElementById('modalEdicao').classList.add('flex');
+        };
+
+        document.getElementById('formEdicao').onsubmit = async (e) => {
+            e.preventDefault();
+            const nomeOriginal = document.getElementById('editNomeOriginal').value;
+            const dados = {
+                "Nome Completo": document.getElementById('editNomeCompleto').value,
+                "Unidade Escolar": document.getElementById('editUnidadeEscolar').value || null,
+                "Função": document.getElementById('editFuncao').value || null,
+                "Endereço": document.getElementById('editEndereco').value || null,
+                "Telefone para Contato": document.getElementById('editTelefoneContato').value || null,
+                "Telefone para Emergências": document.getElementById('editTelefoneEmergencia').value || null,
+                "Matrícula": document.getElementById('editMatricula').value ? parseFloat(document.getElementById('editMatricula').value) : null,
+                "Data de Nascimento": document.getElementById('editDataNascimento').value || null,
+                "Local Atual de Trabalho e Função": document.getElementById('editLocalTrabalho').value || null,
+                "Cor/Raça": document.getElementById('editCorRaca').value || null,
+                "Foto (link da foto)": document.getElementById('editFoto').value || null,
+                "E-mail": document.getElementById('editEmail').value || null,
+                "Laudo de Restrição": document.getElementById('editLaudoRestricao').value || null,
+                "Cargo/Situação": document.getElementById('editCargoSituacao').value || null
+            };
+            const { error } = await supabaseSistema.from('tblCadastro').update(dados).eq('"Nome Completo"', nomeOriginal);
+            if (error) alert('❌ Erro: ' + error.message);
+            else { alert('✅ Atualizado!'); fecharModalEdicao(); carregarTodosFuncionarios(); }
+        };
+
+        window.fecharModalEdicao = function() {
+            const modal = document.getElementById('modalEdicao');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        };
+
+        // DETALHES
+        window.verDetalhes = async function(nome) {
+            const { data } = await supabaseSistema.from('tblCadastro').select('*').eq('"Nome Completo"', nome).single();
+            if (!data) return;
+            let html = '<div class="grid grid-cols-2 gap-3">';
+            for (const [key, value] of Object.entries(data)) {
+                html += `<div class="bg-gray-50 p-3 rounded"><strong>${key}:</strong><br>${value || '-'}</div>`;
+            }
+            html += '</div>';
+            document.getElementById('conteudoModal').innerHTML = html;
+            document.getElementById('modalDetalhes').classList.remove('hidden');
+            document.getElementById('modalDetalhes').classList.add('flex');
+        };
+
+        // EXCLUIR
+        window.excluirFuncionario = async function(nome) {
+            if (confirm(`Excluir ${nome}?`)) {
+                const { error } = await supabaseSistema.from('tblCadastro').delete().eq('"Nome Completo"', nome);
+                if (error) alert('Erro: ' + error.message);
+                else { alert('✅ Excluído!'); carregarTodosFuncionarios(); }
+            }
+        };
+
+        // EXPORTAR EXCEL
+        document.getElementById('btnExportarExcel').onclick = async () => {
+            const { data } = await supabaseSistema.from('tblCadastro').select('*').order('"Nome Completo"');
+            if (!data || data.length === 0) { alert('Nenhum dado para exportar'); return; }
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Funcionarios');
+            XLSX.writeFile(wb, `funcionarios_${new Date().toISOString().split('T')[0]}.xlsx`);
+        };
+
+        // USUÁRIOS
+        async function carregarUsuarios() {
+            const { data } = await supabaseSistema.from('usuarios_autorizados').select('*').order('criado_em');
+            if (!data || data.length === 0) { document.getElementById('listaUsuarios').innerHTML = '<p class="text-center text-gray-500 py-4">Nenhum usuário</p>'; return; }
+            let html = '<table class="min-w-full border"><thead class="bg-gray-50"><tr><th class="px-4 py-2">E-mail</th><th class="px-4 py-2">Nome</th><th class="px-4 py-2">Data</th><th class="px-4 py-2">Ações</th></tr></thead><tbody>';
+            for (const u of data) {
+                html += `<tr class="border-t"><td class="px-4 py-2">${u.email}</td><td class="px-4 py-2">${u.nome || '-'}</td><td class="px-4 py-2">${new Date(u.criado_em).toLocaleDateString()}</td><td class="px-4 py-2 text-center">${u.email !== 'profcesarcamargo@gmail.com' ? `<button onclick="removerUsuario('${u.email}')" class="bg-red-500 text-white px-2 py-1 rounded text-sm">Remover</button>` : '<span class="text-gray-400">Admin</span>'}</td></tr>`;
+            }
+            html += '</tbody></table>';
+            document.getElementById('listaUsuarios').innerHTML = html;
+        }
+
+        window.removerUsuario = async function(email) {
+            if (confirm(`Remover ${email}?`)) {
+                await supabaseSistema.from('usuarios_autorizados').delete().eq('email', email);
+                carregarUsuarios();
+            }
+        };
+
+        document.getElementById('btnAdicionarUsuario').onclick = async () => {
+            const email = document.getElementById('novoUsuarioEmail').value;
+            const nome = document.getElementById('novoUsuarioNome').value;
+            if (!email) { alert('Digite um e-mail'); return; }
+            const { error } = await supabaseSistema.from('usuarios_autorizados').insert([{ email, nome, criado_por: emailLogado }]);
+            if (error) alert('Erro: ' + error.message);
+            else { alert('✅ Usuário autorizado!'); document.getElementById('novoUsuarioEmail').value = ''; document.getElementById('novoUsuarioNome').value = ''; carregarUsuarios(); }
+        };
+
+        // Eventos busca
+        document.getElementById('btnBuscarFunc').onclick = buscarComFiltros;
+        document.getElementById('btnCarregarTodos').onclick = carregarTodosFuncionarios;
+        document.getElementById('btnLimparBuscaFunc').onclick = () => {
+            document.getElementById('buscaNome').value = '';
+            document.getElementById('buscaUnidade').value = '';
+            document.getElementById('buscaFuncao').value = '';
+            document.getElementById('buscaEmail').value = '';
+            carregarTodosFuncionarios();
+        };
+
+        window.fecharModal = function() {
+            const modal = document.getElementById('modalDetalhes');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        };
+
+        verificarAuth();
+    </script>
+</body>
+</html>
