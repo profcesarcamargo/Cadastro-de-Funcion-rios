@@ -114,14 +114,11 @@
         <!-- USUÁRIOS -->
         <div id="abaUsuarios" style="display: none;">
             <div class="bg-white rounded-lg shadow p-6">
-                <h2 class="text-xl font-semibold mb-4">👥 Gerenciar Usuários Autorizados</h2>
-                <div class="mb-6">
-                    <h3 class="text-lg font-semibold mb-2">Adicionar Novo Usuário</h3>
-                    <div class="flex gap-2">
-                        <input type="email" id="novoUsuarioEmail" placeholder="E-mail" class="flex-1 border p-2 rounded">
-                        <input type="text" id="novoUsuarioNome" placeholder="Nome" class="flex-1 border p-2 rounded">
-                        <button id="btnAdicionarUsuario" class="bg-green-500 text-white px-4 py-2 rounded">Adicionar</button>
-                    </div>
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold">👥 Gerenciar Usuários Autorizados</h2>
+                    <button id="btnCriarUsuario" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2">
+                        <span>➕</span> Criar Novo Usuário
+                    </button>
                 </div>
                 <div><h3 class="text-lg font-semibold mb-2">Usuários Autorizados</h3><div id="listaUsuarios"></div></div>
             </div>
@@ -191,6 +188,36 @@
         </div>
     </div>
 
+    <!-- MODAL CRIAR USUÁRIO (APENAS ADMIN) -->
+    <div id="modalCriarUsuario" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-2xl w-96 p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold">👤 Criar Novo Usuário</h3>
+                <button onclick="fecharModalCriarUsuario()" class="text-gray-500 text-2xl hover:text-gray-700">&times;</button>
+            </div>
+            <form id="formCriarUsuario">
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-1">Nome Completo *</label>
+                    <input type="text" id="novoUsuarioNomeCompleto" required class="w-full border p-2 rounded-lg">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-1">E-mail *</label>
+                    <input type="email" id="novoUsuarioEmailSistema" required class="w-full border p-2 rounded-lg">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-1">Senha *</label>
+                    <input type="password" id="novoUsuarioSenha" required class="w-full border p-2 rounded-lg">
+                    <p class="text-xs text-gray-500 mt-1">Mínimo 6 caracteres</p>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-1">Confirmar Senha *</label>
+                    <input type="password" id="novoUsuarioConfirmarSenha" required class="w-full border p-2 rounded-lg">
+                </div>
+                <button type="submit" class="w-full bg-green-600 text-white p-2 rounded-lg hover:bg-green-700">Criar Usuário</button>
+            </form>
+        </div>
+    </div>
+
     <script>
         // CONFIGURAÇÃO
         const SUPABASE_URL = 'https://ndvgduxdebeiyujfrups.supabase.co';
@@ -198,6 +225,7 @@
         
         const supabaseSistema = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         let emailLogado = '';
+        let isAdmin = false;
 
         // FUNÇÃO PARA FORMATAR DATA (YYYY-MM-DD para DD/MM/YYYY)
         function formatarData(dataISO) {
@@ -248,10 +276,16 @@
             emailLogado = session.user.email;
             document.getElementById('nomeUsuario').innerHTML = emailLogado;
             
-            const isAdmin = emailLogado === 'profcesarcamargo@gmail.com';
+            isAdmin = emailLogado === 'profcesarcamargo@gmail.com';
             if (isAdmin) {
                 document.getElementById('statusAdmin').innerHTML = '🔑 Administrador';
                 btn3.style.display = 'inline-block';
+                
+                // Configurar botão de criar usuário
+                const btnCriarUsuario = document.getElementById('btnCriarUsuario');
+                if (btnCriarUsuario) {
+                    btnCriarUsuario.onclick = () => abrirModalCriarUsuario();
+                }
             } else {
                 document.getElementById('statusAdmin').innerHTML = '👤 Usuário autorizado';
                 btn3.style.display = 'none';
@@ -259,6 +293,109 @@
         }
 
         document.getElementById('btnLogout').onclick = async () => { await supabaseSistema.auth.signOut(); window.location.href = 'index.html'; };
+
+        // FUNÇÕES PARA CRIAR USUÁRIO (APENAS ADMIN)
+        function abrirModalCriarUsuario() {
+            if (!isAdmin) {
+                alert('Apenas administradores podem criar usuários!');
+                return;
+            }
+            const modal = document.getElementById('modalCriarUsuario');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function fecharModalCriarUsuario() {
+            const modal = document.getElementById('modalCriarUsuario');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.getElementById('formCriarUsuario').reset();
+        }
+
+        // Criar usuário no Supabase Auth + adicionar na tabela de autorizados
+        document.getElementById('formCriarUsuario').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!isAdmin) {
+                alert('Apenas administradores podem criar usuários!');
+                fecharModalCriarUsuario();
+                return;
+            }
+            
+            const nome = document.getElementById('novoUsuarioNomeCompleto').value;
+            const email = document.getElementById('novoUsuarioEmailSistema').value;
+            const senha = document.getElementById('novoUsuarioSenha').value;
+            const confirmarSenha = document.getElementById('novoUsuarioConfirmarSenha').value;
+            
+            if (senha !== confirmarSenha) {
+                alert('❌ As senhas não coincidem!');
+                return;
+            }
+            
+            if (senha.length < 6) {
+                alert('❌ A senha deve ter pelo menos 6 caracteres!');
+                return;
+            }
+            
+            const btnSubmit = e.target.querySelector('button');
+            const textoOriginal = btnSubmit.textContent;
+            btnSubmit.textContent = 'Criando...';
+            btnSubmit.disabled = true;
+            
+            try {
+                // Verificar se o usuário já existe na tabela de autorizados
+                const { data: existing } = await supabaseSistema
+                    .from('usuarios_autorizados')
+                    .select('email')
+                    .eq('email', email)
+                    .single();
+                
+                if (existing) {
+                    throw new Error('Este e-mail já está autorizado!');
+                }
+                
+                // Verificar se o usuário já existe no Auth
+                const { data: listUsers } = await supabaseSistema.auth.admin.listUsers();
+                const userExists = listUsers?.users?.some(u => u.email === email);
+                
+                if (userExists) {
+                    throw new Error('Este e-mail já possui cadastro no sistema!');
+                }
+                
+                // Criar usuário no Supabase Auth
+                const { data: authData, error: authError } = await supabaseSistema.auth.admin.createUser({
+                    email: email,
+                    password: senha,
+                    email_confirm: true,
+                    user_metadata: { name: nome }
+                });
+                
+                if (authError) throw new Error(authError.message);
+                
+                // Adicionar na tabela de usuários autorizados
+                const { error: insertError } = await supabaseSistema
+                    .from('usuarios_autorizados')
+                    .insert([{ 
+                        email: email, 
+                        nome: nome, 
+                        criado_por: emailLogado,
+                        criado_em: new Date().toISOString()
+                    }]);
+                
+                if (insertError) throw new Error(insertError.message);
+                
+                alert('✅ Usuário criado com sucesso!\n\nE-mail: ' + email + '\nSenha: ' + senha);
+                fecharModalCriarUsuario();
+                carregarUsuarios();
+                
+            } catch (error) {
+                console.error('Erro detalhado:', error);
+                alert('❌ Erro ao criar usuário: ' + error.message);
+            } finally {
+                btnSubmit.textContent = textoOriginal;
+                btnSubmit.disabled = false;
+            }
+        });
 
         // FUNÇÃO PARA UPLOAD DE FOTO (GENÉRICA)
         async function uploadFoto(arquivo, nomeBase) {
@@ -689,30 +826,48 @@
 
         // USUÁRIOS
         async function carregarUsuarios() {
-            const { data } = await supabaseSistema.from('usuarios_autorizados').select('*').order('criado_em');
-            if (!data || data.length === 0) { document.getElementById('listaUsuarios').innerHTML = '<p class="text-center text-gray-500 py-4">Nenhum usuário</p>'; return; }
-            let html = '<table class="min-w-full border"><thead class="bg-gray-50"><tr><th class="px-4 py-2">E-mail</th><th class="px-4 py-2">Nome</th><th class="px-4 py-2">Data</th><th class="px-4 py-2">Ações</th></tr></thead><tbody>';
+            const { data, error } = await supabaseSistema.from('usuarios_autorizados').select('*').order('criado_em');
+            if (error) {
+                console.error('Erro ao carregar usuários:', error);
+                document.getElementById('listaUsuarios').innerHTML = '<p class="text-center text-red-500 py-4">Erro ao carregar usuários</p>';
+                return;
+            }
+            
+            if (!data || data.length === 0) { 
+                document.getElementById('listaUsuarios').innerHTML = '<p class="text-center text-gray-500 py-4">Nenhum usuário autorizado</p>'; 
+                return; 
+            }
+            
+            let html = '<table class="min-w-full border"><thead class="bg-gray-50"><tr><th class="px-4 py-2 text-left">E-mail</th><th class="px-4 py-2 text-left">Nome</th><th class="px-4 py-2 text-left">Data</th><th class="px-4 py-2 text-center">Ações</th></tr></thead><tbody>';
             for (const u of data) {
-                html += `<tr class="border-t"><td class="px-4 py-2">${u.email}</td><td class="px-4 py-2">${u.nome || '-'}</td><td class="px-4 py-2">${new Date(u.criado_em).toLocaleDateString()}</td><td class="px-4 py-2 text-center">${u.email !== 'profcesarcamargo@gmail.com' ? `<button onclick="removerUsuario('${u.email}')" class="bg-red-500 text-white px-2 py-1 rounded text-sm">Remover</button>` : '<span class="text-gray-400">Admin</span>'}</td></tr>`;
+                const dataCriacao = u.criado_em ? new Date(u.criado_em).toLocaleDateString('pt-BR') : '-';
+                html += `<tr class="border-t">
+                    <td class="px-4 py-2">${u.email}</td>
+                    <td class="px-4 py-2">${u.nome || '-'}</td>
+                    <td class="px-4 py-2">${dataCriacao}</td>
+                    <td class="px-4 py-2 text-center">
+                        ${u.email !== 'profcesarcamargo@gmail.com' ? 
+                            `<button onclick="removerUsuario('${u.email}')" class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600">Remover</button>` : 
+                            '<span class="text-gray-400 text-sm">Administrador</span>'}
+                    </td>
+                </tr>`;
             }
             html += '</tbody></table>';
             document.getElementById('listaUsuarios').innerHTML = html;
         }
 
         window.removerUsuario = async function(email) {
-            if (confirm(`Remover ${email}?`)) {
-                await supabaseSistema.from('usuarios_autorizados').delete().eq('email', email);
+            if (!confirm(`Remover o usuário ${email} da lista de autorizados?\n\nO usuário ainda poderá acessar se tiver cadastro no sistema, mas não estará mais na lista de autorizados.`)) {
+                return;
+            }
+            
+            const { error } = await supabaseSistema.from('usuarios_autorizados').delete().eq('email', email);
+            if (error) {
+                alert('Erro ao remover: ' + error.message);
+            } else {
+                alert('✅ Usuário removido da lista de autorizados!');
                 carregarUsuarios();
             }
-        };
-
-        document.getElementById('btnAdicionarUsuario').onclick = async () => {
-            const email = document.getElementById('novoUsuarioEmail').value;
-            const nome = document.getElementById('novoUsuarioNome').value;
-            if (!email) { alert('Digite um e-mail'); return; }
-            const { error } = await supabaseSistema.from('usuarios_autorizados').insert([{ email, nome, criado_por: emailLogado }]);
-            if (error) alert('Erro: ' + error.message);
-            else { alert('✅ Usuário autorizado!'); document.getElementById('novoUsuarioEmail').value = ''; document.getElementById('novoUsuarioNome').value = ''; carregarUsuarios(); }
         };
 
         // Eventos busca
@@ -732,6 +887,7 @@
             modal.classList.remove('flex');
         };
 
+        // Inicializar
         verificarAuth();
     </script>
 </body>
