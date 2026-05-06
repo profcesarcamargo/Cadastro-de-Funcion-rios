@@ -199,6 +199,14 @@
         const supabaseSistema = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         let emailLogado = '';
 
+        // FUNÇÃO PARA FORMATAR DATA (YYYY-MM-DD para DD/MM/YYYY)
+        function formatarData(dataISO) {
+            if (!dataISO) return '-';
+            const partes = dataISO.split('-');
+            if (partes.length !== 3) return dataISO;
+            return `${partes[2]}/${partes[1]}/${partes[0]}`;
+        }
+
         // Elementos DOM
         const aba1 = document.getElementById('abaCadastro');
         const aba2 = document.getElementById('abaBusca');
@@ -254,14 +262,26 @@
 
         // FUNÇÃO PARA UPLOAD DE FOTO (GENÉRICA)
         async function uploadFoto(arquivo, nomeBase) {
+            const { data: { session } } = await supabaseSistema.auth.getSession();
+            if (!session) {
+                throw new Error('Usuário não autenticado. Faça login novamente.');
+            }
+            
             const extensao = arquivo.name.split('.').pop();
-            const nomeArquivo = `${nomeBase.replace(/[^a-z0-9]/gi, '_')}_${Date.now()}.${extensao}`;
+            const userEmail = session.user.email.replace(/[^a-z0-9]/gi, '_');
+            const nomeArquivo = `${userEmail}/${nomeBase.replace(/[^a-z0-9]/gi, '_')}_${Date.now()}.${extensao}`;
             
             const { data, error } = await supabaseSistema.storage
                 .from('fotos_funcionarios')
-                .upload(nomeArquivo, arquivo);
+                .upload(nomeArquivo, arquivo, {
+                    cacheControl: '3600',
+                    upsert: false
+                });
 
-            if (error) throw error;
+            if (error) {
+                console.error('Erro detalhado do upload:', error);
+                throw new Error(error.message);
+            }
 
             const { data: urlData } = supabaseSistema.storage
                 .from('fotos_funcionarios')
@@ -322,7 +342,6 @@
             const link = e.target.value;
             if (link) {
                 document.getElementById('foto').value = link;
-                // Mostrar preview do link
                 const preview = document.getElementById('previewImagemCadastro');
                 const previewDiv = document.getElementById('previewFotoCadastro');
                 preview.src = link;
@@ -335,7 +354,6 @@
         document.getElementById('formFuncionario').onsubmit = async (e) => {
             e.preventDefault();
             
-            // Verificar se tem foto do upload ou do link
             let fotoUrl = document.getElementById('foto').value;
             const fotoLink = document.getElementById('fotoLink').value;
             if (fotoLink && !fotoUrl) {
@@ -393,6 +411,8 @@
             for (const f of data) {
                 const nomeEsc = (f['Nome Completo'] || '').replace(/'/g, "\\'");
                 const fotoUrl = f['Foto (link da foto)'];
+                const dataNascimento = formatarData(f['Data de Nascimento']);
+                
                 html += `<div class="border rounded-lg p-4 hover:shadow">
                     <div class="flex justify-between items-start">
                         <div class="flex gap-4">
@@ -400,7 +420,7 @@
                             <div>
                                 <h3 class="font-bold text-lg">${f['Nome Completo'] || '-'}</h3>
                                 <p class="text-gray-600">${f['Função'] || '-'} | ${f['Unidade Escolar'] || '-'}</p>
-                                <p class="text-sm text-gray-500">📧 ${f['E-mail'] || '-'} | 📱 ${f['Telefone para Contato'] || '-'}</p>
+                                <p class="text-sm text-gray-500">📧 ${f['E-mail'] || '-'} | 📱 ${f['Telefone para Contato'] || '-'} | 🎂 ${dataNascimento}</p>
                             </div>
                         </div>
                         <div class="flex gap-2">
@@ -448,6 +468,8 @@
             for (const f of data) {
                 const nomeEsc = (f['Nome Completo'] || '').replace(/'/g, "\\'");
                 const fotoUrl = f['Foto (link da foto)'];
+                const dataNascimento = formatarData(f['Data de Nascimento']);
+                
                 html += `<div class="border rounded-lg p-4 hover:shadow">
                     <div class="flex justify-between items-start">
                         <div class="flex gap-4">
@@ -455,7 +477,7 @@
                             <div>
                                 <h3 class="font-bold text-lg">${f['Nome Completo'] || '-'}</h3>
                                 <p class="text-gray-600">${f['Função'] || '-'} | ${f['Unidade Escolar'] || '-'}</p>
-                                <p class="text-sm text-gray-500">📧 ${f['E-mail'] || '-'} | 📱 ${f['Telefone para Contato'] || '-'}</p>
+                                <p class="text-sm text-gray-500">📧 ${f['E-mail'] || '-'} | 📱 ${f['Telefone para Contato'] || '-'} | 🎂 ${dataNascimento}</p>
                             </div>
                         </div>
                         <div class="flex gap-2">
@@ -469,12 +491,13 @@
             document.getElementById('listaFuncionarios').innerHTML = html;
         }
 
-        // MODAL DETALHES COM FOTO EM DESTAQUE
+        // MODAL DETALHES COM FOTO EM DESTAQUE E DATA FORMATADA
         window.verDetalhes = async function(nome) {
             const { data } = await supabaseSistema.from('tblCadastro').select('*').eq('"Nome Completo"', nome).single();
             if (!data) return;
             
             const fotoUrl = data['Foto (link da foto)'];
+            const dataNascimento = formatarData(data['Data de Nascimento']);
             
             let html = `
                 <div class="md:col-span-1 flex flex-col items-center">
@@ -494,7 +517,7 @@
                         <div class="bg-gray-50 p-3 rounded"><strong>Endereço:</strong><br>${data['Endereço'] || '-'}</div>
                         <div class="bg-gray-50 p-3 rounded"><strong>Telefone Contato:</strong><br>${data['Telefone para Contato'] || '-'}</div>
                         <div class="bg-gray-50 p-3 rounded"><strong>Telefone Emergência:</strong><br>${data['Telefone para Emergências'] || '-'}</div>
-                        <div class="bg-gray-50 p-3 rounded"><strong>Data Nascimento:</strong><br>${data['Data de Nascimento'] || '-'}</div>
+                        <div class="bg-gray-50 p-3 rounded"><strong>Data Nascimento:</strong><br>${dataNascimento}</div>
                         <div class="bg-gray-50 p-3 rounded"><strong>Local Trabalho:</strong><br>${data['Local Atual de Trabalho e Função'] || '-'}</div>
                         <div class="bg-gray-50 p-3 rounded"><strong>Cor/Raça:</strong><br>${data['Cor/Raça'] || '-'}</div>
                         <div class="bg-gray-50 p-3 rounded"><strong>E-mail:</strong><br>${data['E-mail'] || '-'}</div>
@@ -591,7 +614,6 @@
             document.getElementById('editObservacoes').value = data['Observações'] || '';
             document.getElementById('editFotoLink').value = '';
             
-            // Mostrar preview da foto atual se existir
             if (fotoAtual) {
                 const preview = document.getElementById('previewImagemEdicao');
                 const previewDiv = document.getElementById('previewFotoEdicao');
@@ -608,7 +630,6 @@
         document.getElementById('formEdicao').onsubmit = async (e) => {
             e.preventDefault();
             
-            // Pegar a foto (se veio do upload ou do link)
             let fotoUrl = document.getElementById('editFoto').value;
             const fotoLink = document.getElementById('editFotoLink').value;
             if (fotoLink && !fotoUrl) {
