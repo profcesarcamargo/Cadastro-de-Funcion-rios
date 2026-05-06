@@ -7,9 +7,31 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        .stat-card {
+            transition: transform 0.2s;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        @media print {
+            .no-print {
+                display: none;
+            }
+            .print-only {
+                display: block;
+            }
+        }
+        .print-only {
+            display: none;
+        }
+    </style>
 </head>
 <body class="bg-gray-100 p-8">
     <div class="max-w-7xl mx-auto">
+        <!-- HEADER -->
         <div class="bg-white rounded-lg shadow p-4 mb-6">
             <div class="flex justify-between items-center">
                 <div class="flex items-center gap-6">
@@ -25,16 +47,90 @@
                 </div>
                 <div class="flex gap-2">
                     <button id="btnExportarExcel" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">📊 Exportar Excel</button>
-                    <button id="btnLogout" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">Sair</button>
+                    <button id="btnExportarPDF" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">📄 Exportar PDF</button>
+                    <button id="btnLogout" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Sair</button>
                 </div>
             </div>
         </div>
 
         <!-- Botões de navegação -->
         <div class="flex gap-2 mb-6">
-            <button id="btnAbaBusca" class="bg-blue-500 text-white px-6 py-3 rounded-lg font-semibold">🔍 BUSCAR FUNCIONÁRIOS</button>
+            <button id="btnAbaDashboard" class="bg-purple-500 text-white px-6 py-3 rounded-lg font-semibold">📊 DASHBOARD</button>
+            <button id="btnAbaBusca" class="bg-gray-400 text-white px-6 py-3 rounded-lg font-semibold">🔍 BUSCAR FUNCIONÁRIOS</button>
             <button id="btnAbaCadastro" class="bg-gray-400 text-white px-6 py-3 rounded-lg font-semibold">➕ NOVO CADASTRO</button>
             <button id="btnAbaUsuarios" class="bg-gray-400 text-white px-6 py-3 rounded-lg font-semibold" style="display:none;">👥 GERENCIAR USUÁRIOS</button>
+            <button id="btnAbaAuditoria" class="bg-gray-400 text-white px-6 py-3 rounded-lg font-semibold" style="display:none;">📜 HISTÓRICO</button>
+        </div>
+
+        <!-- DASHBOARD -->
+        <div id="abaDashboard">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div class="bg-white rounded-lg shadow p-4 stat-card">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm">Total Funcionários</p>
+                            <p class="text-3xl font-bold" id="totalFuncionarios">0</p>
+                        </div>
+                        <div class="bg-blue-100 rounded-full p-3">
+                            <span class="text-blue-600 text-xl">👥</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow p-4 stat-card">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm">Aniversariantes do Mês</p>
+                            <p class="text-3xl font-bold" id="totalAniversariantes">0</p>
+                        </div>
+                        <div class="bg-pink-100 rounded-full p-3">
+                            <span class="text-pink-600 text-xl">🎂</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow p-4 stat-card">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm">Com Laudo de Restrição</p>
+                            <p class="text-3xl font-bold" id="totalLaudoSim">0</p>
+                        </div>
+                        <div class="bg-red-100 rounded-full p-3">
+                            <span class="text-red-600 text-xl">⚠️</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow p-4 stat-card">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm">Funcionários Ativos</p>
+                            <p class="text-3xl font-bold" id="totalAtivos">0</p>
+                        </div>
+                        <div class="bg-green-100 rounded-full p-3">
+                            <span class="text-green-600 text-xl">✅</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div class="bg-white rounded-lg shadow p-4">
+                    <h3 class="text-lg font-semibold mb-4">📊 Funcionários por Unidade Escolar</h3>
+                    <canvas id="graficoUnidades" height="200"></canvas>
+                </div>
+                <div class="bg-white rounded-lg shadow p-4">
+                    <h3 class="text-lg font-semibold mb-4">📊 Funcionários por Cargo/Situação</h3>
+                    <canvas id="graficoCargos" height="200"></canvas>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold">🎂 Aniversariantes do Mês</h3>
+                    <span class="text-sm text-gray-500" id="mesAtual"></span>
+                </div>
+                <div id="listaAniversariantes" class="space-y-2">
+                    <p class="text-gray-500 text-center py-4">Carregando...</p>
+                </div>
+            </div>
         </div>
 
         <!-- CADASTRO -->
@@ -53,7 +149,6 @@
                     <div><label class="block text-sm font-medium mb-1">Local Atual de Trabalho e Função</label><input type="text" id="localTrabalho" class="w-full border p-2 rounded"></div>
                     <div><label class="block text-sm font-medium mb-1">Cor/Raça</label><select id="corRaca" class="w-full border p-2 rounded"><option value="">Selecione</option><option>Branca</option><option>Preta</option><option>Parda</option><option>Amarela</option><option>Indígena</option></select></div>
                     
-                    <!-- CAMPO FOTO COM UPLOAD -->
                     <div class="md:col-span-2">
                         <label class="block text-sm font-medium mb-1">Foto do Funcionário</label>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -89,7 +184,7 @@
         </div>
 
         <!-- BUSCA -->
-        <div id="abaBusca">
+        <div id="abaBusca" style="display: none;">
             <div class="bg-white rounded-lg shadow p-6">
                 <h2 class="text-xl font-semibold mb-4">🔍 Buscar Funcionários</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -116,11 +211,48 @@
             <div class="bg-white rounded-lg shadow p-6">
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-xl font-semibold">👥 Gerenciar Usuários Autorizados</h2>
-                    <button id="btnCriarUsuario" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2">
-                        <span>➕</span> Criar Novo Usuário
-                    </button>
                 </div>
+                
+                <div class="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <h3 class="text-md font-semibold text-blue-800 mb-2">📝 Como adicionar um novo usuário:</h3>
+                    <ol class="text-sm text-blue-700 list-decimal list-inside space-y-1">
+                        <li>Acesse o <strong>Supabase Dashboard</strong> → Authentication → Users</li>
+                        <li>Clique em <strong>"Add User"</strong> e crie o usuário com email e senha</li>
+                        <li>Volte aqui e clique em <strong>"Adicionar à Lista"</strong> abaixo</li>
+                    </ol>
+                </div>
+                
+                <div class="mb-6">
+                    <h3 class="text-lg font-semibold mb-2">Adicionar Usuário à Lista de Autorizados</h3>
+                    <div class="flex gap-2">
+                        <input type="email" id="novoUsuarioEmail" placeholder="E-mail do usuário" class="flex-1 border p-2 rounded">
+                        <input type="text" id="novoUsuarioNome" placeholder="Nome do usuário" class="flex-1 border p-2 rounded">
+                        <button id="btnAdicionarUsuario" class="bg-green-500 text-white px-4 py-2 rounded">Adicionar à Lista</button>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-2">⚠️ Importante: O usuário já deve ter sido criado no Supabase Auth (Authentication → Users)</p>
+                </div>
+                
                 <div><h3 class="text-lg font-semibold mb-2">Usuários Autorizados</h3><div id="listaUsuarios"></div></div>
+            </div>
+        </div>
+
+        <!-- AUDITORIA / HISTÓRICO -->
+        <div id="abaAuditoria" style="display: none;">
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold mb-4">📜 Histórico de Alterações</h2>
+                <div class="flex gap-2 mb-4">
+                    <select id="filtroAcao" class="border p-2 rounded">
+                        <option value="">Todas as ações</option>
+                        <option value="CADASTRO">➕ Cadastros</option>
+                        <option value="EDIÇÃO">✏️ Edições</option>
+                        <option value="EXCLUSÃO">🗑️ Exclusões</option>
+                    </select>
+                    <button id="btnFiltrarHistorico" class="bg-blue-500 text-white px-4 py-2 rounded">Filtrar</button>
+                    <button id="btnLimparHistorico" class="bg-gray-500 text-white px-4 py-2 rounded">Limpar</button>
+                </div>
+                <div id="listaHistorico" class="space-y-3 max-h-96 overflow-y-auto">
+                    <p class="text-gray-500 text-center py-4">Carregando histórico...</p>
+                </div>
             </div>
         </div>
     </div>
@@ -142,7 +274,6 @@
                 <div><label>Local Trabalho</label><input type="text" id="editLocalTrabalho" class="w-full border p-2 rounded"></div>
                 <div><label>Cor/Raça</label><select id="editCorRaca" class="w-full border p-2 rounded"><option value="">Selecione</option><option>Branca</option><option>Preta</option><option>Parda</option><option>Amarela</option><option>Indígena</option></select></div>
                 
-                <!-- CAMPO FOTO NA EDIÇÃO -->
                 <div class="md:col-span-2">
                     <label class="block text-sm font-medium mb-1">Foto do Funcionário</label>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -178,44 +309,16 @@
         </div>
     </div>
 
-    <!-- MODAL DETALHES COM FOTO -->
+    <!-- MODAL DETALHES -->
     <div id="modalDetalhes" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
         <div class="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold">👤 Detalhes do Funcionário</h3><button onclick="fecharModal()" class="text-gray-500 text-2xl">&times;</button></div>
-            <div id="conteudoModal" class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <!-- A foto aparecerá aqui -->
-            </div>
+            <div id="conteudoModal" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
         </div>
     </div>
 
-    <!-- MODAL CRIAR USUÁRIO (APENAS ADMIN) -->
-    <div id="modalCriarUsuario" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-        <div class="bg-white rounded-xl shadow-2xl w-96 p-6">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-xl font-bold">👤 Criar Novo Usuário</h3>
-                <button onclick="fecharModalCriarUsuario()" class="text-gray-500 text-2xl hover:text-gray-700">&times;</button>
-            </div>
-            <form id="formCriarUsuario">
-                <div class="mb-4">
-                    <label class="block text-gray-700 mb-1">Nome Completo *</label>
-                    <input type="text" id="novoUsuarioNomeCompleto" required class="w-full border p-2 rounded-lg">
-                </div>
-                <div class="mb-4">
-                    <label class="block text-gray-700 mb-1">E-mail *</label>
-                    <input type="email" id="novoUsuarioEmailSistema" required class="w-full border p-2 rounded-lg">
-                </div>
-                <div class="mb-4">
-                    <label class="block text-gray-700 mb-1">Senha *</label>
-                    <input type="password" id="novoUsuarioSenha" required class="w-full border p-2 rounded-lg">
-                    <p class="text-xs text-gray-500 mt-1">Mínimo 6 caracteres</p>
-                </div>
-                <div class="mb-4">
-                    <label class="block text-gray-700 mb-1">Confirmar Senha *</label>
-                    <input type="password" id="novoUsuarioConfirmarSenha" required class="w-full border p-2 rounded-lg">
-                </div>
-                <button type="submit" class="w-full bg-green-600 text-white p-2 rounded-lg hover:bg-green-700">Criar Usuário</button>
-            </form>
-        </div>
+    <div class="print-only" id="relatorioPDF">
+        <!-- Conteúdo para PDF será inserido dinamicamente -->
     </div>
 
     <script>
@@ -226,8 +329,10 @@
         const supabaseSistema = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         let emailLogado = '';
         let isAdmin = false;
+        let graficoUnidades = null;
+        let graficoCargos = null;
 
-        // FUNÇÃO PARA FORMATAR DATA (YYYY-MM-DD para DD/MM/YYYY)
+        // FUNÇÃO PARA FORMATAR DATA
         function formatarData(dataISO) {
             if (!dataISO) return '-';
             const partes = dataISO.split('-');
@@ -235,39 +340,82 @@
             return `${partes[2]}/${partes[1]}/${partes[0]}`;
         }
 
-        // Elementos DOM
-        const aba1 = document.getElementById('abaCadastro');
-        const aba2 = document.getElementById('abaBusca');
-        const aba3 = document.getElementById('abaUsuarios');
-        const btn1 = document.getElementById('btnAbaCadastro');
-        const btn2 = document.getElementById('btnAbaBusca');
-        const btn3 = document.getElementById('btnAbaUsuarios');
+        function formatarDataHora(dataISO) {
+            if (!dataISO) return '-';
+            const data = new Date(dataISO);
+            return data.toLocaleString('pt-BR');
+        }
 
-        function setAba(aba) {
-            aba1.style.display = 'none';
-            aba2.style.display = 'none';
-            aba3.style.display = 'none';
-            btn1.className = 'bg-gray-400 text-white px-6 py-3 rounded-lg font-semibold';
-            btn2.className = 'bg-gray-400 text-white px-6 py-3 rounded-lg font-semibold';
-            btn3.className = 'bg-gray-400 text-white px-6 py-3 rounded-lg font-semibold';
-            
-            if (aba === 'cadastro') {
-                aba1.style.display = 'block';
-                btn1.className = 'bg-blue-500 text-white px-6 py-3 rounded-lg font-semibold';
-            } else if (aba === 'busca') {
-                aba2.style.display = 'block';
-                btn2.className = 'bg-blue-500 text-white px-6 py-3 rounded-lg font-semibold';
-                carregarTodosFuncionarios();
-            } else if (aba === 'usuarios') {
-                aba3.style.display = 'block';
-                btn3.className = 'bg-blue-500 text-white px-6 py-3 rounded-lg font-semibold';
-                carregarUsuarios();
+        // FUNÇÃO PARA REGISTRAR AUDITORIA
+        async function registrarAuditoria(acao, nomeFuncionario, dadosAntigos = null, dadosNovos = null) {
+            try {
+                const { error } = await supabaseSistema.from('auditoria_funcionarios').insert([{
+                    acao: acao,
+                    nome_funcionario: nomeFuncionario,
+                    usuario: emailLogado,
+                    dados_antigos: dadosAntigos ? JSON.stringify(dadosAntigos) : null,
+                    dados_novos: dadosNovos ? JSON.stringify(dadosNovos) : null,
+                    data_hora: new Date().toISOString()
+                }]);
+                if (error) console.error('Erro ao registrar auditoria:', error);
+            } catch (err) {
+                console.error('Erro ao registrar auditoria:', err);
             }
         }
 
-        btn1.onclick = () => setAba('cadastro');
-        btn2.onclick = () => setAba('busca');
-        btn3.onclick = () => setAba('usuarios');
+        // Elementos DOM
+        const abaDashboard = document.getElementById('abaDashboard');
+        const abaCadastro = document.getElementById('abaCadastro');
+        const abaBusca = document.getElementById('abaBusca');
+        const abaUsuarios = document.getElementById('abaUsuarios');
+        const abaAuditoria = document.getElementById('abaAuditoria');
+        
+        const btnDashboard = document.getElementById('btnAbaDashboard');
+        const btnCadastro = document.getElementById('btnAbaCadastro');
+        const btnBusca = document.getElementById('btnAbaBusca');
+        const btnUsuarios = document.getElementById('btnAbaUsuarios');
+        const btnAuditoria = document.getElementById('btnAbaAuditoria');
+
+        function setAba(aba) {
+            abaDashboard.style.display = 'none';
+            abaCadastro.style.display = 'none';
+            abaBusca.style.display = 'none';
+            abaUsuarios.style.display = 'none';
+            abaAuditoria.style.display = 'none';
+            
+            btnDashboard.className = 'bg-gray-400 text-white px-6 py-3 rounded-lg font-semibold';
+            btnCadastro.className = 'bg-gray-400 text-white px-6 py-3 rounded-lg font-semibold';
+            btnBusca.className = 'bg-gray-400 text-white px-6 py-3 rounded-lg font-semibold';
+            btnUsuarios.className = 'bg-gray-400 text-white px-6 py-3 rounded-lg font-semibold';
+            btnAuditoria.className = 'bg-gray-400 text-white px-6 py-3 rounded-lg font-semibold';
+            
+            if (aba === 'dashboard') {
+                abaDashboard.style.display = 'block';
+                btnDashboard.className = 'bg-purple-500 text-white px-6 py-3 rounded-lg font-semibold';
+                carregarDashboard();
+            } else if (aba === 'cadastro') {
+                abaCadastro.style.display = 'block';
+                btnCadastro.className = 'bg-blue-500 text-white px-6 py-3 rounded-lg font-semibold';
+            } else if (aba === 'busca') {
+                abaBusca.style.display = 'block';
+                btnBusca.className = 'bg-blue-500 text-white px-6 py-3 rounded-lg font-semibold';
+                carregarTodosFuncionarios();
+            } else if (aba === 'usuarios') {
+                abaUsuarios.style.display = 'block';
+                btnUsuarios.className = 'bg-blue-500 text-white px-6 py-3 rounded-lg font-semibold';
+                carregarUsuarios();
+            } else if (aba === 'auditoria') {
+                abaAuditoria.style.display = 'block';
+                btnAuditoria.className = 'bg-blue-500 text-white px-6 py-3 rounded-lg font-semibold';
+                carregarHistorico();
+            }
+        }
+
+        btnDashboard.onclick = () => setAba('dashboard');
+        btnCadastro.onclick = () => setAba('cadastro');
+        btnBusca.onclick = () => setAba('busca');
+        btnUsuarios.onclick = () => setAba('usuarios');
+        btnAuditoria.onclick = () => setAba('auditoria');
 
         // Auth
         async function verificarAuth() {
@@ -279,130 +427,106 @@
             isAdmin = emailLogado === 'profcesarcamargo@gmail.com';
             if (isAdmin) {
                 document.getElementById('statusAdmin').innerHTML = '🔑 Administrador';
-                btn3.style.display = 'inline-block';
-                
-                // Configurar botão de criar usuário
-                const btnCriarUsuario = document.getElementById('btnCriarUsuario');
-                if (btnCriarUsuario) {
-                    btnCriarUsuario.onclick = () => abrirModalCriarUsuario();
-                }
+                btnUsuarios.style.display = 'inline-block';
+                btnAuditoria.style.display = 'inline-block';
             } else {
                 document.getElementById('statusAdmin').innerHTML = '👤 Usuário autorizado';
-                btn3.style.display = 'none';
+                btnUsuarios.style.display = 'none';
+                btnAuditoria.style.display = 'none';
             }
         }
 
         document.getElementById('btnLogout').onclick = async () => { await supabaseSistema.auth.signOut(); window.location.href = 'index.html'; };
 
-        // FUNÇÕES PARA CRIAR USUÁRIO (APENAS ADMIN)
-        function abrirModalCriarUsuario() {
-            if (!isAdmin) {
-                alert('Apenas administradores podem criar usuários!');
-                return;
-            }
-            const modal = document.getElementById('modalCriarUsuario');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-        }
-
-        function fecharModalCriarUsuario() {
-            const modal = document.getElementById('modalCriarUsuario');
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-            document.getElementById('formCriarUsuario').reset();
-        }
-
-        // Criar usuário no Supabase Auth + adicionar na tabela de autorizados
-        document.getElementById('formCriarUsuario').addEventListener('submit', async (e) => {
-            e.preventDefault();
+        // DASHBOARD
+        async function carregarDashboard() {
+            const { data, error } = await supabaseSistema.from('tblCadastro').select('*');
+            if (error) { console.error('Erro ao carregar dashboard:', error); return; }
             
-            if (!isAdmin) {
-                alert('Apenas administradores podem criar usuários!');
-                fecharModalCriarUsuario();
-                return;
-            }
+            // Estatísticas básicas
+            document.getElementById('totalFuncionarios').innerHTML = data.length;
             
-            const nome = document.getElementById('novoUsuarioNomeCompleto').value;
-            const email = document.getElementById('novoUsuarioEmailSistema').value;
-            const senha = document.getElementById('novoUsuarioSenha').value;
-            const confirmarSenha = document.getElementById('novoUsuarioConfirmarSenha').value;
+            const aniversariantes = data.filter(f => {
+                if (!f['Data de Nascimento']) return false;
+                const mesAniversario = parseInt(f['Data de Nascimento'].split('-')[1]);
+                const mesAtual = new Date().getMonth() + 1;
+                return mesAniversario === mesAtual;
+            });
+            document.getElementById('totalAniversariantes').innerHTML = aniversariantes.length;
             
-            if (senha !== confirmarSenha) {
-                alert('❌ As senhas não coincidem!');
-                return;
-            }
+            const laudoSim = data.filter(f => f['Laudo de Restrição'] === 'Sim').length;
+            document.getElementById('totalLaudoSim').innerHTML = laudoSim;
             
-            if (senha.length < 6) {
-                alert('❌ A senha deve ter pelo menos 6 caracteres!');
-                return;
-            }
+            const ativos = data.filter(f => f['Cargo/Situação'] === 'Efetivo' || f['Cargo/Situação'] === 'Comissionado' || f['Cargo/Situação'] === 'Contratado').length;
+            document.getElementById('totalAtivos').innerHTML = ativos;
             
-            const btnSubmit = e.target.querySelector('button');
-            const textoOriginal = btnSubmit.textContent;
-            btnSubmit.textContent = 'Criando...';
-            btnSubmit.disabled = true;
+            // Gráfico por Unidade Escolar
+            const unidades = {};
+            data.forEach(f => {
+                const unidade = f['Unidade Escolar'] || 'Não informada';
+                unidades[unidade] = (unidades[unidade] || 0) + 1;
+            });
             
-            try {
-                // Verificar se o usuário já existe na tabela de autorizados
-                const { data: existing } = await supabaseSistema
-                    .from('usuarios_autorizados')
-                    .select('email')
-                    .eq('email', email)
-                    .single();
-                
-                if (existing) {
-                    throw new Error('Este e-mail já está autorizado!');
-                }
-                
-                // Verificar se o usuário já existe no Auth
-                const { data: listUsers } = await supabaseSistema.auth.admin.listUsers();
-                const userExists = listUsers?.users?.some(u => u.email === email);
-                
-                if (userExists) {
-                    throw new Error('Este e-mail já possui cadastro no sistema!');
-                }
-                
-                // Criar usuário no Supabase Auth
-                const { data: authData, error: authError } = await supabaseSistema.auth.admin.createUser({
-                    email: email,
-                    password: senha,
-                    email_confirm: true,
-                    user_metadata: { name: nome }
+            const labelsUnidades = Object.keys(unidades);
+            const dadosUnidades = Object.values(unidades);
+            
+            if (graficoUnidades) graficoUnidades.destroy();
+            graficoUnidades = new Chart(document.getElementById('graficoUnidades'), {
+                type: 'bar',
+                data: { labels: labelsUnidades, datasets: [{ label: 'Funcionários', data: dadosUnidades, backgroundColor: '#3b82f6' }] },
+                options: { responsive: true, maintainAspectRatio: true }
+            });
+            
+            // Gráfico por Cargo/Situação
+            const cargos = {};
+            data.forEach(f => {
+                const cargo = f['Cargo/Situação'] || 'Não informado';
+                cargos[cargo] = (cargos[cargo] || 0) + 1;
+            });
+            
+            const labelsCargos = Object.keys(cargos);
+            const dadosCargos = Object.values(cargos);
+            
+            if (graficoCargos) graficoCargos.destroy();
+            graficoCargos = new Chart(document.getElementById('graficoCargos'), {
+                type: 'pie',
+                data: { labels: labelsCargos, datasets: [{ data: dadosCargos, backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec489a'] }] },
+                options: { responsive: true, maintainAspectRatio: true }
+            });
+            
+            // Lista de aniversariantes
+            const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+            const mesAtual = new Date().getMonth();
+            document.getElementById('mesAtual').innerHTML = meses[mesAtual];
+            
+            if (aniversariantes.length === 0) {
+                document.getElementById('listaAniversariantes').innerHTML = '<p class="text-gray-500 text-center py-4">Nenhum aniversariante este mês</p>';
+            } else {
+                let html = '<div class="grid grid-cols-1 md:grid-cols-2 gap-2">';
+                aniversariantes.sort((a, b) => {
+                    const diaA = parseInt(a['Data de Nascimento'].split('-')[2]);
+                    const diaB = parseInt(b['Data de Nascimento'].split('-')[2]);
+                    return diaA - diaB;
+                }).forEach(f => {
+                    const dataNasc = formatarData(f['Data de Nascimento']);
+                    const hoje = new Date();
+                    const diaAniversario = parseInt(f['Data de Nascimento'].split('-')[2]);
+                    const diaHoje = hoje.getDate();
+                    const destaque = diaAniversario === diaHoje ? 'bg-green-100 border-green-400' : 'bg-pink-50';
+                    html += `<div class="${destaque} p-3 rounded-lg flex justify-between items-center">
+                        <div><span class="font-semibold">${f['Nome Completo']}</span><br><span class="text-sm text-gray-600">${f['Função'] || '-'}</span></div>
+                        <div class="text-right"><span class="text-lg">🎂</span><br><span class="text-sm font-bold">${dataNasc}</span></div>
+                    </div>`;
                 });
-                
-                if (authError) throw new Error(authError.message);
-                
-                // Adicionar na tabela de usuários autorizados
-                const { error: insertError } = await supabaseSistema
-                    .from('usuarios_autorizados')
-                    .insert([{ 
-                        email: email, 
-                        nome: nome, 
-                        criado_por: emailLogado,
-                        criado_em: new Date().toISOString()
-                    }]);
-                
-                if (insertError) throw new Error(insertError.message);
-                
-                alert('✅ Usuário criado com sucesso!\n\nE-mail: ' + email + '\nSenha: ' + senha);
-                fecharModalCriarUsuario();
-                carregarUsuarios();
-                
-            } catch (error) {
-                console.error('Erro detalhado:', error);
-                alert('❌ Erro ao criar usuário: ' + error.message);
-            } finally {
-                btnSubmit.textContent = textoOriginal;
-                btnSubmit.disabled = false;
+                html += '</div>';
+                document.getElementById('listaAniversariantes').innerHTML = html;
             }
-        });
+        }
 
-        // FUNÇÃO PARA UPLOAD DE FOTO (GENÉRICA)
+        // FUNÇÃO PARA UPLOAD DE FOTO
         async function uploadFoto(arquivo, nomeBase) {
             const { data: { session } } = await supabaseSistema.auth.getSession();
-            if (!session) {
-                throw new Error('Usuário não autenticado. Faça login novamente.');
-            }
+            if (!session) throw new Error('Usuário não autenticado');
             
             const extensao = arquivo.name.split('.').pop();
             const userEmail = session.user.email.replace(/[^a-z0-9]/gi, '_');
@@ -410,62 +534,35 @@
             
             const { data, error } = await supabaseSistema.storage
                 .from('fotos_funcionarios')
-                .upload(nomeArquivo, arquivo, {
-                    cacheControl: '3600',
-                    upsert: false
-                });
+                .upload(nomeArquivo, arquivo, { cacheControl: '3600', upsert: false });
 
-            if (error) {
-                console.error('Erro detalhado do upload:', error);
-                throw new Error(error.message);
-            }
-
-            const { data: urlData } = supabaseSistema.storage
-                .from('fotos_funcionarios')
-                .getPublicUrl(nomeArquivo);
-
+            if (error) throw new Error(error.message);
+            const { data: urlData } = supabaseSistema.storage.from('fotos_funcionarios').getPublicUrl(nomeArquivo);
             return urlData.publicUrl;
         }
 
-        // UPLOAD NO CADASTRO
         let arquivoSelecionado = null;
-        let previewAtual = null;
-
         document.getElementById('uploadFoto').addEventListener('change', (e) => {
             arquivoSelecionado = e.target.files[0];
             if (arquivoSelecionado) {
                 const preview = document.getElementById('previewImagemCadastro');
                 const previewDiv = document.getElementById('previewFotoCadastro');
                 const reader = new FileReader();
-                reader.onload = (e) => {
-                    preview.src = e.target.result;
-                    previewDiv.classList.remove('hidden');
-                };
+                reader.onload = (e) => { preview.src = e.target.result; previewDiv.classList.remove('hidden'); };
                 reader.readAsDataURL(arquivoSelecionado);
-                previewAtual = 'cadastro';
             }
         });
 
         document.getElementById('btnUploadFoto').onclick = async () => {
-            if (!arquivoSelecionado) {
-                alert('Selecione uma foto primeiro!');
-                return;
-            }
-
+            if (!arquivoSelecionado) { alert('Selecione uma foto primeiro!'); return; }
             const nomeCompleto = document.getElementById('nomeCompleto').value;
-            if (!nomeCompleto) {
-                alert('Preencha o Nome Completo antes de fazer o upload da foto!');
-                return;
-            }
-
+            if (!nomeCompleto) { alert('Preencha o Nome Completo primeiro!'); return; }
             try {
                 const url = await uploadFoto(arquivoSelecionado, nomeCompleto);
                 document.getElementById('foto').value = url;
                 document.getElementById('fotoLink').value = '';
                 alert('✅ Foto enviada com sucesso!');
-            } catch (error) {
-                alert('Erro no upload: ' + error.message);
-            }
+            } catch (error) { alert('Erro no upload: ' + error.message); }
         };
 
         document.getElementById('btnLimparPreview').onclick = () => {
@@ -474,7 +571,6 @@
             arquivoSelecionado = null;
         };
 
-        // Capturar link manual no cadastro
         document.getElementById('fotoLink').addEventListener('change', (e) => {
             const link = e.target.value;
             if (link) {
@@ -483,19 +579,15 @@
                 const previewDiv = document.getElementById('previewFotoCadastro');
                 preview.src = link;
                 previewDiv.classList.remove('hidden');
-                previewAtual = 'cadastro';
             }
         });
 
         // CADASTRO
         document.getElementById('formFuncionario').onsubmit = async (e) => {
             e.preventDefault();
-            
             let fotoUrl = document.getElementById('foto').value;
             const fotoLink = document.getElementById('fotoLink').value;
-            if (fotoLink && !fotoUrl) {
-                fotoUrl = fotoLink;
-            }
+            if (fotoLink && !fotoUrl) fotoUrl = fotoLink;
             
             const dados = {
                 "Nome Completo": document.getElementById('nomeCompleto').value,
@@ -517,118 +609,58 @@
             const { error } = await supabaseSistema.from('tblCadastro').insert([dados]);
             if (error) alert('❌ Erro: ' + error.message);
             else { 
+                await registrarAuditoria('CADASTRO', dados['Nome Completo'], null, dados);
                 alert('✅ Cadastrado!'); 
                 document.getElementById('formFuncionario').reset();
                 document.getElementById('previewFotoCadastro').classList.add('hidden');
                 document.getElementById('foto').value = '';
                 arquivoSelecionado = null;
+                carregarDashboard();
             }
         };
 
-        // FUNÇÃO PARA CARREGAR TODOS OS FUNCIONÁRIOS
+        // CARREGAR FUNCIONÁRIOS
         async function carregarTodosFuncionarios() {
-            const { data, error } = await supabaseSistema
-                .from('tblCadastro')
-                .select('*')
-                .order('"Nome Completo"');
-            
-            if (error) { 
-                alert('Erro: ' + error.message);
-                return; 
-            }
-            
+            const { data, error } = await supabaseSistema.from('tblCadastro').select('*').order('"Nome Completo"');
+            if (error) { alert('Erro: ' + error.message); return; }
             document.getElementById('totalResultados').innerHTML = data.length + ' funcionário(s)';
-            
-            if (data.length === 0) { 
-                document.getElementById('listaFuncionarios').innerHTML = '<p class="text-center text-gray-500 py-8">Nenhum funcionário cadastrado</p>'; 
-                return; 
-            }
+            if (data.length === 0) { document.getElementById('listaFuncionarios').innerHTML = '<p class="text-center text-gray-500 py-8">Nenhum funcionário cadastrado</p>'; return; }
             
             let html = '';
             for (const f of data) {
                 const nomeEsc = (f['Nome Completo'] || '').replace(/'/g, "\\'");
                 const fotoUrl = f['Foto (link da foto)'];
                 const dataNascimento = formatarData(f['Data de Nascimento']);
-                
-                html += `<div class="border rounded-lg p-4 hover:shadow">
-                    <div class="flex justify-between items-start">
-                        <div class="flex gap-4">
-                            ${fotoUrl ? `<img src="${fotoUrl}" class="h-16 w-16 object-cover rounded-full" onerror="this.style.display='none'">` : '<div class="h-16 w-16 bg-gray-200 rounded-full flex items-center justify-center"><span class="text-gray-400">📸</span></div>'}
-                            <div>
-                                <h3 class="font-bold text-lg">${f['Nome Completo'] || '-'}</h3>
-                                <p class="text-gray-600">${f['Função'] || '-'} | ${f['Unidade Escolar'] || '-'}</p>
-                                <p class="text-sm text-gray-500">📧 ${f['E-mail'] || '-'} | 📱 ${f['Telefone para Contato'] || '-'} | 🎂 ${dataNascimento}</p>
-                            </div>
-                        </div>
-                        <div class="flex gap-2">
-                            <button onclick='verDetalhes("${nomeEsc}")' class="bg-blue-500 text-white px-3 py-1 rounded">Ver</button>
-                            <button onclick='abrirEdicao("${nomeEsc}")' class="bg-yellow-500 text-white px-3 py-1 rounded">✏️ Editar</button>
-                            <button onclick='excluirFuncionario("${nomeEsc}")' class="bg-red-500 text-white px-3 py-1 rounded">Excluir</button>
-                        </div>
-                    </div>
-                </div>`;
+                html += `<div class="border rounded-lg p-4 hover:shadow"><div class="flex justify-between items-start"><div class="flex gap-4">${fotoUrl ? `<img src="${fotoUrl}" class="h-16 w-16 object-cover rounded-full" onerror="this.style.display='none'">` : '<div class="h-16 w-16 bg-gray-200 rounded-full flex items-center justify-center"><span class="text-gray-400">📸</span></div>'}<div><h3 class="font-bold text-lg">${f['Nome Completo'] || '-'}</h3><p class="text-gray-600">${f['Função'] || '-'} | ${f['Unidade Escolar'] || '-'}</p><p class="text-sm text-gray-500">📧 ${f['E-mail'] || '-'} | 📱 ${f['Telefone para Contato'] || '-'} | 🎂 ${dataNascimento}</p></div></div><div class="flex gap-2"><button onclick='verDetalhes("${nomeEsc}")' class="bg-blue-500 text-white px-3 py-1 rounded">Ver</button><button onclick='abrirEdicao("${nomeEsc}")' class="bg-yellow-500 text-white px-3 py-1 rounded">✏️ Editar</button><button onclick='excluirFuncionario("${nomeEsc}")' class="bg-red-500 text-white px-3 py-1 rounded">Excluir</button></div></div></div>`;
             }
             document.getElementById('listaFuncionarios').innerHTML = html;
         }
 
-        // BUSCAR COM FILTROS
         async function buscarComFiltros() {
             let query = supabaseSistema.from('tblCadastro').select('*');
-            
             const nome = document.getElementById('buscaNome').value;
             if (nome) query = query.ilike('"Nome Completo"', `%${nome}%`);
-            
             const unidade = document.getElementById('buscaUnidade').value;
             if (unidade) query = query.ilike('"Unidade Escolar"', `%${unidade}%`);
-            
             const funcao = document.getElementById('buscaFuncao').value;
             if (funcao) query = query.ilike('"Função"', `%${funcao}%`);
-            
             const email = document.getElementById('buscaEmail').value;
             if (email) query = query.ilike('"E-mail"', `%${email}%`);
-            
             const { data, error } = await query.order('"Nome Completo"');
-            
-            if (error) { 
-                alert('Erro: ' + error.message);
-                return; 
-            }
-            
+            if (error) { alert('Erro: ' + error.message); return; }
             document.getElementById('totalResultados').innerHTML = data.length + ' funcionário(s)';
-            
-            if (data.length === 0) { 
-                document.getElementById('listaFuncionarios').innerHTML = '<p class="text-center text-gray-500 py-8">Nenhum funcionário encontrado</p>'; 
-                return; 
-            }
-            
+            if (data.length === 0) { document.getElementById('listaFuncionarios').innerHTML = '<p class="text-center text-gray-500 py-8">Nenhum funcionário encontrado</p>'; return; }
             let html = '';
             for (const f of data) {
                 const nomeEsc = (f['Nome Completo'] || '').replace(/'/g, "\\'");
                 const fotoUrl = f['Foto (link da foto)'];
                 const dataNascimento = formatarData(f['Data de Nascimento']);
-                
-                html += `<div class="border rounded-lg p-4 hover:shadow">
-                    <div class="flex justify-between items-start">
-                        <div class="flex gap-4">
-                            ${fotoUrl ? `<img src="${fotoUrl}" class="h-16 w-16 object-cover rounded-full" onerror="this.style.display='none'">` : '<div class="h-16 w-16 bg-gray-200 rounded-full flex items-center justify-center"><span class="text-gray-400">📸</span></div>'}
-                            <div>
-                                <h3 class="font-bold text-lg">${f['Nome Completo'] || '-'}</h3>
-                                <p class="text-gray-600">${f['Função'] || '-'} | ${f['Unidade Escolar'] || '-'}</p>
-                                <p class="text-sm text-gray-500">📧 ${f['E-mail'] || '-'} | 📱 ${f['Telefone para Contato'] || '-'} | 🎂 ${dataNascimento}</p>
-                            </div>
-                        </div>
-                        <div class="flex gap-2">
-                            <button onclick='verDetalhes("${nomeEsc}")' class="bg-blue-500 text-white px-3 py-1 rounded">Ver</button>
-                            <button onclick='abrirEdicao("${nomeEsc}")' class="bg-yellow-500 text-white px-3 py-1 rounded">✏️ Editar</button>
-                            <button onclick='excluirFuncionario("${nomeEsc}")' class="bg-red-500 text-white px-3 py-1 rounded">Excluir</button>
-                        </div>
-                    </div>
-                </div>`;
+                html += `<div class="border rounded-lg p-4 hover:shadow"><div class="flex justify-between items-start"><div class="flex gap-4">${fotoUrl ? `<img src="${fotoUrl}" class="h-16 w-16 object-cover rounded-full" onerror="this.style.display='none'">` : '<div class="h-16 w-16 bg-gray-200 rounded-full flex items-center justify-center"><span class="text-gray-400">📸</span></div>'}<div><h3 class="font-bold text-lg">${f['Nome Completo'] || '-'}</h3><p class="text-gray-600">${f['Função'] || '-'} | ${f['Unidade Escolar'] || '-'}</p><p class="text-sm text-gray-500">📧 ${f['E-mail'] || '-'} | 📱 ${f['Telefone para Contato'] || '-'} | 🎂 ${dataNascimento}</p></div></div><div class="flex gap-2"><button onclick='verDetalhes("${nomeEsc}")' class="bg-blue-500 text-white px-3 py-1 rounded">Ver</button><button onclick='abrirEdicao("${nomeEsc}")' class="bg-yellow-500 text-white px-3 py-1 rounded">✏️ Editar</button><button onclick='excluirFuncionario("${nomeEsc}")' class="bg-red-500 text-white px-3 py-1 rounded">Excluir</button></div></div></div>`;
             }
             document.getElementById('listaFuncionarios').innerHTML = html;
         }
 
-        // MODAL DETALHES COM FOTO EM DESTAQUE E DATA FORMATADA
+        // MODAL DETALHES
         window.verDetalhes = async function(nome) {
             const { data } = await supabaseSistema.from('tblCadastro').select('*').eq('"Nome Completo"', nome).single();
             if (!data) return;
@@ -670,7 +702,7 @@
             document.getElementById('modalDetalhes').classList.add('flex');
         };
 
-        // EDIÇÃO - Com upload de foto
+        // EDIÇÃO
         let editArquivoSelecionado = null;
         
         document.getElementById('editUploadFoto').addEventListener('change', (e) => {
@@ -679,34 +711,21 @@
                 const preview = document.getElementById('previewImagemEdicao');
                 const previewDiv = document.getElementById('previewFotoEdicao');
                 const reader = new FileReader();
-                reader.onload = (e) => {
-                    preview.src = e.target.result;
-                    previewDiv.classList.remove('hidden');
-                };
+                reader.onload = (e) => { preview.src = e.target.result; previewDiv.classList.remove('hidden'); };
                 reader.readAsDataURL(editArquivoSelecionado);
             }
         });
         
         document.getElementById('btnEditUploadFoto').onclick = async () => {
-            if (!editArquivoSelecionado) {
-                alert('Selecione uma foto primeiro!');
-                return;
-            }
-            
+            if (!editArquivoSelecionado) { alert('Selecione uma foto primeiro!'); return; }
             const nomeCompleto = document.getElementById('editNomeCompleto').value;
-            if (!nomeCompleto) {
-                alert('Nome Completo é obrigatório!');
-                return;
-            }
-            
+            if (!nomeCompleto) { alert('Nome Completo é obrigatório!'); return; }
             try {
                 const url = await uploadFoto(editArquivoSelecionado, nomeCompleto);
                 document.getElementById('editFoto').value = url;
                 document.getElementById('editFotoLink').value = '';
                 alert('✅ Nova foto enviada com sucesso!');
-            } catch (error) {
-                alert('Erro no upload: ' + error.message);
-            }
+            } catch (error) { alert('Erro no upload: ' + error.message); }
         };
         
         document.getElementById('btnLimparPreviewEdit').onclick = () => {
@@ -715,7 +734,6 @@
             editArquivoSelecionado = null;
         };
         
-        // Capturar link manual na edição
         document.getElementById('editFotoLink').addEventListener('change', (e) => {
             const link = e.target.value;
             if (link) {
@@ -769,11 +787,13 @@
             
             let fotoUrl = document.getElementById('editFoto').value;
             const fotoLink = document.getElementById('editFotoLink').value;
-            if (fotoLink && !fotoUrl) {
-                fotoUrl = fotoLink;
-            }
+            if (fotoLink && !fotoUrl) fotoUrl = fotoLink;
             
             const nomeOriginal = document.getElementById('editNomeOriginal').value;
+            
+            // Buscar dados antigos para auditoria
+            const { data: dadosAntigos } = await supabaseSistema.from('tblCadastro').select('*').eq('"Nome Completo"', nomeOriginal).single();
+            
             const dados = {
                 "Nome Completo": document.getElementById('editNomeCompleto').value,
                 "Unidade Escolar": document.getElementById('editUnidadeEscolar').value || null,
@@ -793,7 +813,13 @@
             };
             const { error } = await supabaseSistema.from('tblCadastro').update(dados).eq('"Nome Completo"', nomeOriginal);
             if (error) alert('❌ Erro: ' + error.message);
-            else { alert('✅ Atualizado!'); fecharModalEdicao(); carregarTodosFuncionarios(); }
+            else { 
+                await registrarAuditoria('EDIÇÃO', dados['Nome Completo'], dadosAntigos, dados);
+                alert('✅ Atualizado!'); 
+                fecharModalEdicao(); 
+                carregarTodosFuncionarios();
+                carregarDashboard();
+            }
         };
 
         window.fecharModalEdicao = function() {
@@ -808,9 +834,17 @@
         // EXCLUIR
         window.excluirFuncionario = async function(nome) {
             if (confirm(`Excluir ${nome}?`)) {
+                // Buscar dados para auditoria antes de excluir
+                const { data: dadosAntigos } = await supabaseSistema.from('tblCadastro').select('*').eq('"Nome Completo"', nome).single();
+                
                 const { error } = await supabaseSistema.from('tblCadastro').delete().eq('"Nome Completo"', nome);
                 if (error) alert('Erro: ' + error.message);
-                else { alert('✅ Excluído!'); carregarTodosFuncionarios(); }
+                else { 
+                    await registrarAuditoria('EXCLUSÃO', nome, dadosAntigos, null);
+                    alert('✅ Excluído!'); 
+                    carregarTodosFuncionarios();
+                    carregarDashboard();
+                }
             }
         };
 
@@ -824,50 +858,147 @@
             XLSX.writeFile(wb, `funcionarios_${new Date().toISOString().split('T')[0]}.xlsx`);
         };
 
+        // EXPORTAR PDF
+        document.getElementById('btnExportarPDF').onclick = async () => {
+            const { data } = await supabaseSistema.from('tblCadastro').select('*').order('"Nome Completo"');
+            if (!data || data.length === 0) { alert('Nenhum dado para exportar'); return; }
+            
+            let html = `
+                <html>
+                <head>
+                    <title>Relatório de Funcionários - Santa Branca</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 20px; }
+                        h1 { color: #1e40af; text-align: center; }
+                        .header { text-align: center; margin-bottom: 30px; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                        th { background-color: #3b82f6; color: white; }
+                        .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #666; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1>📋 Relatório de Funcionários</h1>
+                        <p>Secretaria Municipal de Santa Branca</p>
+                        <p>Data de emissão: ${new Date().toLocaleDateString('pt-BR')}</p>
+                        <p>Total de funcionários: ${data.length}</p>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr><th>Nome</th><th>Unidade</th><th>Função</th><th>Cargo/Situação</th><th>Data Nascimento</th><th>E-mail</th><th>Telefone</th></tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            for (const f of data) {
+                html += `<tr>
+                    <td>${f['Nome Completo'] || '-'}</td>
+                    <td>${f['Unidade Escolar'] || '-'}</td>
+                    <td>${f['Função'] || '-'}</td>
+                    <td>${f['Cargo/Situação'] || '-'}</td>
+                    <td>${formatarData(f['Data de Nascimento'])}</td>
+                    <td>${f['E-mail'] || '-'}</td>
+                    <td>${f['Telefone para Contato'] || '-'}</td>
+                </tr>`;
+            }
+            
+            html += `
+                        </tbody>
+                    无人
+                    <div class="footer">
+                        <p>Relatório gerado pelo Sistema de Cadastro de Funcionários - Santa Branca</p>
+                    </div>
+                </body>
+                </html>
+            `;
+            
+            const win = window.open();
+            win.document.write(html);
+            win.document.close();
+            win.print();
+        };
+
+        // HISTÓRICO DE AUDITORIA
+        async function carregarHistorico(filtroAcao = '') {
+            let query = supabaseSistema.from('auditoria_funcionarios').select('*').order('data_hora', { ascending: false });
+            if (filtroAcao) {
+                query = query.eq('acao', filtroAcao);
+            }
+            const { data, error } = await query;
+            if (error) { 
+                console.error('Erro ao carregar histórico:', error);
+                document.getElementById('listaHistorico').innerHTML = '<p class="text-red-500 text-center py-4">Erro ao carregar histórico. Tabela não existe?</p>';
+                return; 
+            }
+            
+            if (!data || data.length === 0) {
+                document.getElementById('listaHistorico').innerHTML = '<p class="text-gray-500 text-center py-4">Nenhum registro de histórico encontrado</p>';
+                return;
+            }
+            
+            const acaoIcone = { 'CADASTRO': '➕', 'EDIÇÃO': '✏️', 'EXCLUSÃO': '🗑️' };
+            const acaoCor = { 'CADASTRO': 'text-green-600', 'EDIÇÃO': 'text-yellow-600', 'EXCLUSÃO': 'text-red-600' };
+            
+            let html = '';
+            for (const h of data) {
+                html += `<div class="border rounded-lg p-3 hover:shadow">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="font-bold ${acaoCor[h.acao] || ''}">${acaoIcone[h.acao] || '📌'} ${h.acao}</span>
+                            <span class="font-semibold ml-2">${h.nome_funcionario || '-'}</span>
+                            <p class="text-sm text-gray-500">👤 ${h.usuario} | ${formatarDataHora(h.data_hora)}</p>
+                            ${h.dados_antigos && h.acao === 'EDIÇÃO' ? `<details class="mt-2"><summary class="text-sm text-blue-600 cursor-pointer">Ver detalhes da alteração</summary><pre class="text-xs bg-gray-100 p-2 rounded mt-1 overflow-x-auto">${JSON.stringify(JSON.parse(h.dados_antigos), null, 2)}</pre></details>` : ''}
+                        </div>
+                    </div>
+                </div>`;
+            }
+            document.getElementById('listaHistorico').innerHTML = html;
+        }
+        
+        document.getElementById('btnFiltrarHistorico').onclick = () => {
+            const filtro = document.getElementById('filtroAcao').value;
+            carregarHistorico(filtro);
+        };
+        document.getElementById('btnLimparHistorico').onclick = () => {
+            document.getElementById('filtroAcao').value = '';
+            carregarHistorico();
+        };
+
         // USUÁRIOS
         async function carregarUsuarios() {
             const { data, error } = await supabaseSistema.from('usuarios_autorizados').select('*').order('criado_em');
             if (error) {
-                console.error('Erro ao carregar usuários:', error);
                 document.getElementById('listaUsuarios').innerHTML = '<p class="text-center text-red-500 py-4">Erro ao carregar usuários</p>';
                 return;
             }
-            
             if (!data || data.length === 0) { 
                 document.getElementById('listaUsuarios').innerHTML = '<p class="text-center text-gray-500 py-4">Nenhum usuário autorizado</p>'; 
                 return; 
             }
-            
             let html = '<table class="min-w-full border"><thead class="bg-gray-50"><tr><th class="px-4 py-2 text-left">E-mail</th><th class="px-4 py-2 text-left">Nome</th><th class="px-4 py-2 text-left">Data</th><th class="px-4 py-2 text-center">Ações</th></tr></thead><tbody>';
             for (const u of data) {
                 const dataCriacao = u.criado_em ? new Date(u.criado_em).toLocaleDateString('pt-BR') : '-';
-                html += `<tr class="border-t">
-                    <td class="px-4 py-2">${u.email}</td>
-                    <td class="px-4 py-2">${u.nome || '-'}</td>
-                    <td class="px-4 py-2">${dataCriacao}</td>
-                    <td class="px-4 py-2 text-center">
-                        ${u.email !== 'profcesarcamargo@gmail.com' ? 
-                            `<button onclick="removerUsuario('${u.email}')" class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600">Remover</button>` : 
-                            '<span class="text-gray-400 text-sm">Administrador</span>'}
-                    </td>
-                </tr>`;
+                html += `<tr class="border-t"><td class="px-4 py-2">${u.email}</td><td class="px-4 py-2">${u.nome || '-'}</td><td class="px-4 py-2">${dataCriacao}</td><td class="px-4 py-2 text-center">${u.email !== 'profcesarcamargo@gmail.com' ? `<button onclick="removerUsuario('${u.email}')" class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600">Remover</button>` : '<span class="text-gray-400 text-sm">Administrador</span>'}</td></tr>`;
             }
             html += '</tbody></table>';
             document.getElementById('listaUsuarios').innerHTML = html;
         }
 
         window.removerUsuario = async function(email) {
-            if (!confirm(`Remover o usuário ${email} da lista de autorizados?\n\nO usuário ainda poderá acessar se tiver cadastro no sistema, mas não estará mais na lista de autorizados.`)) {
-                return;
-            }
-            
+            if (!confirm(`Remover o usuário ${email} da lista de autorizados?`)) return;
             const { error } = await supabaseSistema.from('usuarios_autorizados').delete().eq('email', email);
-            if (error) {
-                alert('Erro ao remover: ' + error.message);
-            } else {
-                alert('✅ Usuário removido da lista de autorizados!');
-                carregarUsuarios();
-            }
+            if (error) { alert('Erro ao remover: ' + error.message); } 
+            else { alert('✅ Usuário removido!'); carregarUsuarios(); }
+        };
+
+        document.getElementById('btnAdicionarUsuario').onclick = async () => {
+            const email = document.getElementById('novoUsuarioEmail').value;
+            const nome = document.getElementById('novoUsuarioNome').value;
+            if (!email) { alert('Digite um e-mail'); return; }
+            const { error } = await supabaseSistema.from('usuarios_autorizados').insert([{ email, nome, criado_por: emailLogado, criado_em: new Date().toISOString() }]);
+            if (error) alert('Erro: ' + error.message);
+            else { alert('✅ Usuário adicionado à lista!'); document.getElementById('novoUsuarioEmail').value = ''; document.getElementById('novoUsuarioNome').value = ''; carregarUsuarios(); }
         };
 
         // Eventos busca
