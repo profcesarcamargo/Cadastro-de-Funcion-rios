@@ -438,7 +438,7 @@
 
         document.getElementById('btnLogout').onclick = async () => { await supabaseSistema.auth.signOut(); window.location.href = 'index.html'; };
 
-        // DASHBOARD
+        // DASHBOARD (COM CORREÇÃO)
         async function carregarDashboard() {
             const { data, error } = await supabaseSistema.from('tblCadastro').select('*');
             if (error) { console.error('Erro ao carregar dashboard:', error); return; }
@@ -457,7 +457,11 @@
             const laudoSim = data.filter(f => f['Laudo de Restrição'] === 'Sim').length;
             document.getElementById('totalLaudoSim').innerHTML = laudoSim;
             
-            const ativos = data.filter(f => f['Cargo/Situação'] === 'Efetivo' || f['Cargo/Situação'] === 'Comissionado' || f['Cargo/Situação'] === 'Contratado').length;
+            // CORREÇÃO: Funcionários Ativos = todos que NÃO são 'Afastado'
+            const ativos = data.filter(f => {
+                const cargo = f['Cargo/Situação'];
+                return cargo && cargo !== 'Afastado';
+            }).length;
             document.getElementById('totalAtivos').innerHTML = ativos;
             
             // Gráfico por Unidade Escolar
@@ -905,7 +909,7 @@
             
             html += `
                         </tbody>
-                    无人
+                    </table>
                     <div class="footer">
                         <p>Relatório gerado pelo Sistema de Cadastro de Funcionários - Santa Branca</p>
                     </div>
