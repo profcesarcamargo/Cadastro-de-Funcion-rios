@@ -48,10 +48,12 @@
 
         <!-- DASHBOARD -->
         <div id="abaDashboard">
-            <!-- Botão independente para funcionários com laudo -->
-            <div class="mb-4 flex justify-end">
-                <button id="btnVerFuncionariosLaudo" class="bg-red-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-red-600 transition shadow-lg">
-                    ⚠️ VER FUNCIONÁRIOS COM LAUDO DE RESTRIÇÃO
+            <!-- BOTÃO VER FUNCIONÁRIOS COM LAUDO - ACIMA DOS CARDS -->
+            <div class="mb-6">
+                <button id="btnVerFuncionariosLaudo" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-6 rounded-lg shadow-lg transition duration-300 flex items-center justify-center gap-3 text-lg">
+                    <span class="text-2xl">⚠️</span>
+                    VER FUNCIONÁRIOS COM LAUDO DE RESTRIÇÃO
+                    <span class="text-2xl">⚠️</span>
                 </button>
             </div>
 
@@ -305,7 +307,7 @@
                     const fotoUrl = func['Foto (link da foto)'];
                     html += `
                         <div class="border rounded-lg p-4 hover:bg-red-50 transition flex items-center gap-4">
-                            ${fotoUrl ? `<img src="${fotoUrl}" class="h-14 w-14 object-cover rounded-full" onerror="this.style.display=\'none\'">` : `<div class="h-14 w-14 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0"><span class="text-gray-400 text-sm">📸</span></div>`}
+                            ${fotoUrl ? `<img src="${fotoUrl}" class="h-14 w-14 object-cover rounded-full" onerror="this.style.display='none'">` : `<div class="h-14 w-14 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0"><span class="text-gray-400 text-sm">📸</span></div>`}
                             <div class="flex-1">
                                 <div class="font-bold text-gray-800 text-lg">${func['Nome Completo'] || '-'}</div>
                                 <div class="text-sm text-gray-600">📌 ${func['Função'] || 'Função não informada'} | 🏫 ${func['Unidade Escolar'] || 'Unidade não informada'}</div>
@@ -385,10 +387,13 @@
         btnUsuarios.onclick = () => setAba('usuarios');
         btnAuditoria.onclick = () => setAba('auditoria');
 
-        // Botão para listar funcionários com laudo - AGORA FORA DO CARD
-        const btnLaudo = document.getElementById('btnVerFuncionariosLaudo');
-        if (btnLaudo) {
-            btnLaudo.onclick = listarFuncionariosComLaudo;
+        // Botão para listar funcionários com laudo
+        const btnVerLaudo = document.getElementById('btnVerFuncionariosLaudo');
+        if (btnVerLaudo) {
+            btnVerLaudo.onclick = listarFuncionariosComLaudo;
+            console.log('Botão encontrado e configurado!');
+        } else {
+            console.error('Botão NÃO encontrado!');
         }
 
         async function verificarAuth() {
@@ -815,7 +820,7 @@
             for (const f of data) {
                 html += `<tr><td>${f['Nome Completo'] || '-'}</td><td>${f['Unidade Escolar'] || '-'}</td><td>${f['Função'] || '-'}</td><td>${f['Cargo/Situação'] || '-'}</td><td>${formatarData(f['Data de Nascimento'])}</td><td>${f['E-mail'] || '-'}</td></tr>`;
             }
-            html += `</tbody>｜｜DSML｜｜</body></html>`;
+            html += `</tbody>}</table></body></html>`;
             const win = window.open();
             win.document.write(html);
             win.document.close();
