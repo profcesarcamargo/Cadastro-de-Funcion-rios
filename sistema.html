@@ -48,52 +48,66 @@
 
         <!-- DASHBOARD -->
         <div id="abaDashboard">
-            <!-- BOTÃO VER FUNCIONÁRIOS COM LAUDO -->
-            <div class="mb-6">
-                <button id="btnVerLaudo" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-6 rounded-lg shadow-lg transition flex items-center justify-center gap-3 text-lg">
-                    <span class="text-2xl">⚠️</span>
-                    VER FUNCIONÁRIOS COM LAUDO DE RESTRIÇÃO
-                    <span class="text-2xl">⚠️</span>
-                </button>
-            </div>
+    <!-- BOTÃO VER FUNCIONÁRIOS COM LAUDO -->
+    <div class="mb-6">
+        <button id="btnVerLaudo" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-6 rounded-lg shadow-lg transition flex items-center justify-center gap-3 text-lg">
+            <span class="text-2xl">⚠️</span>
+            VER FUNCIONÁRIOS COM LAUDO DE RESTRIÇÃO
+            <span class="text-2xl">⚠️</span>
+        </button>
+    </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <div class="bg-white rounded-lg shadow p-4 stat-card">
-                    <div class="flex items-center justify-between">
-                        <div><p class="text-gray-500 text-sm">Total Funcionários</p><p class="text-3xl font-bold" id="totalFuncionarios">0</p></div>
-                        <div class="bg-blue-100 rounded-full p-3"><span class="text-blue-600 text-xl">👥</span></div>
-                    </div>
-                </div>
-                <div class="bg-white rounded-lg shadow p-4 stat-card">
-                    <div class="flex items-center justify-between">
-                        <div><p class="text-gray-500 text-sm">Aniversariantes do Mês</p><p class="text-3xl font-bold" id="totalAniversariantes">0</p></div>
-                        <div class="bg-pink-100 rounded-full p-3"><span class="text-pink-600 text-xl">🎂</span></div>
-                    </div>
-                </div>
-                <div class="bg-white rounded-lg shadow p-4 stat-card">
-                    <div class="flex items-center justify-between">
-                        <div><p class="text-gray-500 text-sm">Com Laudo de Restrição</p><p class="text-3xl font-bold" id="totalLaudoSim">0</p></div>
-                        <div class="bg-red-100 rounded-full p-3"><span class="text-red-600 text-xl">⚠️</span></div>
-                    </div>
-                </div>
-                <div class="bg-white rounded-lg shadow p-4 stat-card">
-                    <div class="flex items-center justify-between">
-                        <div><p class="text-gray-500 text-sm">Funcionários Ativos</p><p class="text-3xl font-bold" id="totalAtivos">0</p></div>
-                        <div class="bg-green-100 rounded-full p-3"><span class="text-green-600 text-xl">✅</span></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div class="bg-white rounded-lg shadow p-4"><h3 class="text-lg font-semibold mb-4">📊 Funcionários por Unidade Escolar</h3><canvas id="graficoUnidades" height="200"></canvas></div>
-                <div class="bg-white rounded-lg shadow p-4"><h3 class="text-lg font-semibold mb-4">📊 Funcionários por Cargo/Situação</h3><canvas id="graficoCargos" height="200"></canvas></div>
-            </div>
-
-            <div class="bg-white rounded-lg shadow p-4">
-                <div class="flex justify-between items-center mb-4"><h3 class="text-lg font-semibold">🎂 Aniversariantes do Mês</h3><span class="text-sm text-gray-500" id="mesAtual"></span></div>
-                <div id="listaAniversariantes" class="space-y-2"><p class="text-gray-500 text-center py-4">Carregando...</p></div>
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div class="bg-white rounded-lg shadow p-4 stat-card">
+            <div class="flex items-center justify-between">
+                <div><p class="text-gray-500 text-sm">Total Funcionários</p><p class="text-3xl font-bold" id="totalFuncionarios">0</p></div>
+                <div class="bg-blue-100 rounded-full p-3"><span class="text-blue-600 text-xl">👥</span></div>
             </div>
         </div>
+        <div class="bg-white rounded-lg shadow p-4 stat-card">
+            <div class="flex items-center justify-between">
+                <div><p class="text-gray-500 text-sm">Aniversariantes do Mês</p><p class="text-3xl font-bold" id="totalAniversariantes">0</p></div>
+                <div class="bg-pink-100 rounded-full p-3"><span class="text-pink-600 text-xl">🎂</span></div>
+            </div>
+        </div>
+        <div class="bg-white rounded-lg shadow p-4 stat-card">
+            <div class="flex items-center justify-between">
+                <div><p class="text-gray-500 text-sm">Com Laudo de Restrição</p><p class="text-3xl font-bold" id="totalLaudoSim">0</p></div>
+                <div class="bg-red-100 rounded-full p-3"><span class="text-red-600 text-xl">⚠️</span></div>
+            </div>
+        </div>
+        <div class="bg-white rounded-lg shadow p-4 stat-card">
+            <div class="flex items-center justify-between">
+                <div><p class="text-gray-500 text-sm">Funcionários Ativos</p><p class="text-3xl font-bold" id="totalAtivos">0</p></div>
+                <div class="bg-green-100 rounded-full p-3"><span class="text-green-600 text-xl">✅</span></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div class="bg-white rounded-lg shadow p-4"><h3 class="text-lg font-semibold mb-4">📊 Funcionários por Unidade Escolar</h3><canvas id="graficoUnidades" height="200"></canvas></div>
+        <div class="bg-white rounded-lg shadow p-4"><h3 class="text-lg font-semibold mb-4">📊 Funcionários por Cargo/Situação</h3><canvas id="graficoCargos" height="200"></canvas></div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-4">
+        <div class="flex justify-between items-center mb-4"><h3 class="text-lg font-semibold">🎂 Aniversariantes do Mês</h3><span class="text-sm text-gray-500" id="mesAtual"></span></div>
+        <div id="listaAniversariantes" class="space-y-2"><p class="text-gray-500 text-center py-4">Carregando...</p></div>
+    </div>
+</div>
+
+<!-- MODAL LAUDO - adicione antes do fechamento do body -->
+<div id="modalLaudo" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] flex flex-col">
+        <div class="flex justify-between items-center mb-4 border-b pb-3">
+            <h3 class="text-xl font-bold text-red-600">⚠️ Funcionários com Laudo de Restrição</h3>
+            <button onclick="fecharModalLaudo()" class="text-gray-500 text-2xl hover:text-gray-700">&times;</button>
+        </div>
+        <div id="listaLaudo" class="overflow-y-auto flex-1"></div>
+        <div class="mt-4 pt-3 border-t flex justify-end">
+            <button onclick="fecharModalLaudo()" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Fechar</button>
+        </div>
+    </div>
+</div>
 
         <!-- CADASTRO -->
         <div id="abaCadastro" style="display: none;">
