@@ -48,6 +48,13 @@
 
         <!-- DASHBOARD -->
         <div id="abaDashboard">
+            <!-- Botão independente para funcionários com laudo -->
+            <div class="mb-4 flex justify-end">
+                <button id="btnVerFuncionariosLaudo" class="bg-red-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-red-600 transition shadow-lg">
+                    ⚠️ VER FUNCIONÁRIOS COM LAUDO DE RESTRIÇÃO
+                </button>
+            </div>
+
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                 <div class="bg-white rounded-lg shadow p-4 stat-card">
                     <div class="flex items-center justify-between">
@@ -61,18 +68,12 @@
                         <div class="bg-pink-100 rounded-full p-3"><span class="text-pink-600 text-xl">🎂</span></div>
                     </div>
                 </div>
-                
-                <!-- CARD COM LAUDO DE RESTRIÇÃO - COM BOTÃO -->
                 <div class="bg-white rounded-lg shadow p-4 stat-card">
                     <div class="flex items-center justify-between">
                         <div><p class="text-gray-500 text-sm">Com Laudo de Restrição</p><p class="text-3xl font-bold" id="totalLaudoSim">0</p></div>
                         <div class="bg-red-100 rounded-full p-3"><span class="text-red-600 text-xl">⚠️</span></div>
                     </div>
-                    <button id="btnVerFuncionariosLaudo" class="mt-3 bg-red-500 text-white text-sm px-3 py-2 rounded-lg hover:bg-red-600 w-full transition duration-200 font-semibold">
-                        👥 VER FUNCIONÁRIOS COM LAUDO
-                    </button>
                 </div>
-                
                 <div class="bg-white rounded-lg shadow p-4 stat-card">
                     <div class="flex items-center justify-between">
                         <div><p class="text-gray-500 text-sm">Funcionários Ativos</p><p class="text-3xl font-bold" id="totalAtivos">0</p></div>
@@ -173,9 +174,16 @@
     <!-- MODAL LAUDO -->
     <div id="modalLaudo" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
         <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] flex flex-col">
-            <div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold text-red-600">⚠️ Funcionários com Laudo de Restrição</h3><button onclick="fecharModalLaudo()" class="text-gray-500 text-2xl">&times;</button></div>
-            <div id="listaLaudoFuncionarios" class="overflow-y-auto flex-1 space-y-2"><p class="text-gray-500 text-center py-4">Carregando...</p></div>
-            <div class="mt-4 pt-3 border-t flex justify-end"><button onclick="fecharModalLaudo()" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Fechar</button></div>
+            <div class="flex justify-between items-center mb-4 border-b pb-3">
+                <h3 class="text-xl font-bold text-red-600">⚠️ Funcionários com Laudo de Restrição</h3>
+                <button onclick="fecharModalLaudo()" class="text-gray-500 text-2xl hover:text-gray-700">&times;</button>
+            </div>
+            <div id="listaLaudoFuncionarios" class="overflow-y-auto flex-1 space-y-2">
+                <p class="text-gray-500 text-center py-4">⏳ Carregando funcionários...</p>
+            </div>
+            <div class="mt-4 pt-3 border-t flex justify-end">
+                <button onclick="fecharModalLaudo()" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Fechar</button>
+            </div>
         </div>
     </div>
 
@@ -271,12 +279,12 @@
             
             modal.classList.remove('hidden');
             modal.classList.add('flex');
-            listaDiv.innerHTML = '<p class="text-gray-500 text-center py-4">⏳ Carregando funcionários...</p>';
+            listaDiv.innerHTML = '<div class="text-center py-4"><div class="animate-pulse text-gray-500">⏳ Carregando funcionários...</div></div>';
             
             try {
                 const { data, error } = await supabaseSistema
                     .from('tblCadastro')
-                    .select('"Nome Completo", "Função", "Unidade Escolar", "Foto (link da foto)"')
+                    .select('"Nome Completo", "Função", "Unidade Escolar", "Foto (link da foto)", "Telefone para Contato", "E-mail"')
                     .eq('"Laudo de Restrição"', 'Sim')
                     .order('"Nome Completo"');
                 
@@ -287,18 +295,25 @@
                     return;
                 }
                 
-                let html = '<div class="space-y-3">';
+                let html = `<div class="mb-3 p-2 bg-red-100 rounded-lg text-center">
+                                <span class="font-semibold text-red-700">Total: ${data.length} funcionário(s) com laudo de restrição</span>
+                           </div>`;
+                html += '<div class="space-y-3">';
+                
                 data.forEach(func => {
                     const nomeEscaped = (func['Nome Completo'] || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
                     const fotoUrl = func['Foto (link da foto)'];
                     html += `
                         <div class="border rounded-lg p-4 hover:bg-red-50 transition flex items-center gap-4">
-                            ${fotoUrl ? `<img src="${fotoUrl}" class="h-12 w-12 object-cover rounded-full" onerror="this.style.display=\'none\'">` : `<div class="h-12 w-12 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0"><span class="text-gray-400 text-sm">📸</span></div>`}
+                            ${fotoUrl ? `<img src="${fotoUrl}" class="h-14 w-14 object-cover rounded-full" onerror="this.style.display=\'none\'">` : `<div class="h-14 w-14 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0"><span class="text-gray-400 text-sm">📸</span></div>`}
                             <div class="flex-1">
-                                <div class="font-semibold text-gray-800">${func['Nome Completo'] || '-'}</div>
-                                <div class="text-sm text-gray-600">${func['Função'] || 'Função não informada'} | ${func['Unidade Escolar'] || 'Unidade não informada'}</div>
+                                <div class="font-bold text-gray-800 text-lg">${func['Nome Completo'] || '-'}</div>
+                                <div class="text-sm text-gray-600">📌 ${func['Função'] || 'Função não informada'} | 🏫 ${func['Unidade Escolar'] || 'Unidade não informada'}</div>
+                                <div class="text-xs text-gray-500 mt-1">📧 ${func['E-mail'] || 'E-mail não informado'} | 📱 ${func['Telefone para Contato'] || 'Telefone não informado'}</div>
                             </div>
-                            <button onclick="verDetalhes('${nomeEscaped}')" class="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600">Ver Detalhes</button>
+                            <button onclick="verDetalhes('${nomeEscaped}')" class="bg-blue-500 text-white px-4 py-2 rounded-md text-sm hover:bg-blue-600 transition font-semibold whitespace-nowrap">
+                                👤 Ver Detalhes
+                            </button>
                         </div>
                     `;
                 });
@@ -306,7 +321,7 @@
                 listaDiv.innerHTML = html;
             } catch (error) {
                 console.error('Erro ao carregar funcionários com laudo:', error);
-                listaDiv.innerHTML = '<p class="text-red-500 text-center py-4">❌ Erro ao carregar lista de funcionários.</p>';
+                listaDiv.innerHTML = '<div class="text-center py-8"><p class="text-red-500 text-lg">❌ Erro ao carregar lista de funcionários.</p></div>';
             }
         }
 
@@ -370,8 +385,11 @@
         btnUsuarios.onclick = () => setAba('usuarios');
         btnAuditoria.onclick = () => setAba('auditoria');
 
-        // Botão para listar funcionários com laudo
-        document.getElementById('btnVerFuncionariosLaudo').onclick = listarFuncionariosComLaudo;
+        // Botão para listar funcionários com laudo - AGORA FORA DO CARD
+        const btnLaudo = document.getElementById('btnVerFuncionariosLaudo');
+        if (btnLaudo) {
+            btnLaudo.onclick = listarFuncionariosComLaudo;
+        }
 
         async function verificarAuth() {
             const { data: { session } } = await supabaseSistema.auth.getSession();
@@ -605,7 +623,7 @@
         window.verDetalhes = async function(nome) {
             const { data } = await supabaseSistema.from('tblCadastro').select('*').eq('"Nome Completo"', nome).single();
             if (!data) return;
-            fecharModalLaudo(); // Fecha modal do laudo se estiver aberta
+            fecharModalLaudo();
             
             const fotoUrl = data['Foto (link da foto)'];
             const dataNascimento = formatarData(data['Data de Nascimento']);
@@ -797,7 +815,7 @@
             for (const f of data) {
                 html += `<tr><td>${f['Nome Completo'] || '-'}</td><td>${f['Unidade Escolar'] || '-'}</td><td>${f['Função'] || '-'}</td><td>${f['Cargo/Situação'] || '-'}</td><td>${formatarData(f['Data de Nascimento'])}</td><td>${f['E-mail'] || '-'}</td></tr>`;
             }
-            html += `</tbody></table></body></html>`;
+            html += `</tbody>｜｜DSML｜｜</body></html>`;
             const win = window.open();
             win.document.write(html);
             win.document.close();
