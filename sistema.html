@@ -48,12 +48,12 @@
 
         <!-- DASHBOARD -->
         <div id="abaDashboard">
-            <!-- BOTÃO VER FUNCIONÁRIOS COM LAUDO - AGORA DO MESMO TAMANHO DOS CARDS -->
-            <div class="mb-6">
-                <button id="btnVerLaudo" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-6 rounded-lg shadow-lg transition flex items-center justify-center gap-3 text-lg">
-                    <span class="text-2xl">⚠️</span>
-                    VER FUNCIONÁRIOS COM LAUDO DE RESTRIÇÃO
-                    <span class="text-2xl">⚠️</span>
+            <!-- BOTÃO VER FUNCIONÁRIOS COM LAUDO - AGORA NO MESMO TAMANHO DOS DEMAIS BOTÕES -->
+            <div class="flex gap-2 mb-6">
+                <button id="btnVerLaudo" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-semibold transition flex items-center justify-center gap-2 shadow">
+                    <span class="text-xl">⚠️</span>
+                    VER FUNCIONÁRIOS COM LAUDO
+                    <span class="text-xl">⚠️</span>
                 </button>
             </div>
 
@@ -817,7 +817,7 @@
             for (const f of data) {
                 html += `<tr><td>${f['Nome Completo'] || '-'}</td><td>${f['Unidade Escolar'] || '-'}</td><td>${f['Função'] || '-'}</td><td>${f['Cargo/Situação'] || '-'}</td><td>${formatarData(f['Data de Nascimento'])}</td><td>${f['E-mail'] || '-'}</td></tr>`;
             }
-            html += `</tbody></table></body></html>`;
+            html += `</tbody>}</table></body></html>`;
             const win = window.open();
             win.document.write(html);
             win.document.close();
