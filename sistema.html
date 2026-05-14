@@ -48,66 +48,66 @@
 
         <!-- DASHBOARD -->
         <div id="abaDashboard">
-    <!-- BOTÃO VER FUNCIONÁRIOS COM LAUDO -->
-    <div class="mb-6">
-        <button id="btnVerLaudo" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-6 rounded-lg shadow-lg transition flex items-center justify-center gap-3 text-lg">
-            <span class="text-2xl">⚠️</span>
-            VER FUNCIONÁRIOS COM LAUDO DE RESTRIÇÃO
-            <span class="text-2xl">⚠️</span>
-        </button>
-    </div>
+            <!-- BOTÃO VER FUNCIONÁRIOS COM LAUDO - AGORA DO MESMO TAMANHO DOS CARDS -->
+            <div class="mb-6">
+                <button id="btnVerLaudo" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-6 rounded-lg shadow-lg transition flex items-center justify-center gap-3 text-lg">
+                    <span class="text-2xl">⚠️</span>
+                    VER FUNCIONÁRIOS COM LAUDO DE RESTRIÇÃO
+                    <span class="text-2xl">⚠️</span>
+                </button>
+            </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div class="bg-white rounded-lg shadow p-4 stat-card">
-            <div class="flex items-center justify-between">
-                <div><p class="text-gray-500 text-sm">Total Funcionários</p><p class="text-3xl font-bold" id="totalFuncionarios">0</p></div>
-                <div class="bg-blue-100 rounded-full p-3"><span class="text-blue-600 text-xl">👥</span></div>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div class="bg-white rounded-lg shadow p-4 stat-card">
+                    <div class="flex items-center justify-between">
+                        <div><p class="text-gray-500 text-sm">Total Funcionários</p><p class="text-3xl font-bold" id="totalFuncionarios">0</p></div>
+                        <div class="bg-blue-100 rounded-full p-3"><span class="text-blue-600 text-xl">👥</span></div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow p-4 stat-card">
+                    <div class="flex items-center justify-between">
+                        <div><p class="text-gray-500 text-sm">Aniversariantes do Mês</p><p class="text-3xl font-bold" id="totalAniversariantes">0</p></div>
+                        <div class="bg-pink-100 rounded-full p-3"><span class="text-pink-600 text-xl">🎂</span></div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow p-4 stat-card">
+                    <div class="flex items-center justify-between">
+                        <div><p class="text-gray-500 text-sm">Com Laudo de Restrição</p><p class="text-3xl font-bold" id="totalLaudoSim">0</p></div>
+                        <div class="bg-red-100 rounded-full p-3"><span class="text-red-600 text-xl">⚠️</span></div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow p-4 stat-card">
+                    <div class="flex items-center justify-between">
+                        <div><p class="text-gray-500 text-sm">Funcionários Ativos</p><p class="text-3xl font-bold" id="totalAtivos">0</p></div>
+                        <div class="bg-green-100 rounded-full p-3"><span class="text-green-600 text-xl">✅</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div class="bg-white rounded-lg shadow p-4"><h3 class="text-lg font-semibold mb-4">📊 Funcionários por Unidade Escolar</h3><canvas id="graficoUnidades" height="200"></canvas></div>
+                <div class="bg-white rounded-lg shadow p-4"><h3 class="text-lg font-semibold mb-4">📊 Funcionários por Cargo/Situação</h3><canvas id="graficoCargos" height="200"></canvas></div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-4">
+                <div class="flex justify-between items-center mb-4"><h3 class="text-lg font-semibold">🎂 Aniversariantes do Mês</h3><span class="text-sm text-gray-500" id="mesAtual"></span></div>
+                <div id="listaAniversariantes" class="space-y-2"><p class="text-gray-500 text-center py-4">Carregando...</p></div>
             </div>
         </div>
-        <div class="bg-white rounded-lg shadow p-4 stat-card">
-            <div class="flex items-center justify-between">
-                <div><p class="text-gray-500 text-sm">Aniversariantes do Mês</p><p class="text-3xl font-bold" id="totalAniversariantes">0</p></div>
-                <div class="bg-pink-100 rounded-full p-3"><span class="text-pink-600 text-xl">🎂</span></div>
+
+        <!-- MODAL LAUDO -->
+        <div id="modalLaudo" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+            <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] flex flex-col">
+                <div class="flex justify-between items-center mb-4 border-b pb-3">
+                    <h3 class="text-xl font-bold text-red-600">⚠️ Funcionários com Laudo de Restrição</h3>
+                    <button onclick="fecharModalLaudo()" class="text-gray-500 text-2xl hover:text-gray-700">&times;</button>
+                </div>
+                <div id="listaLaudo" class="overflow-y-auto flex-1"></div>
+                <div class="mt-4 pt-3 border-t flex justify-end">
+                    <button onclick="fecharModalLaudo()" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Fechar</button>
+                </div>
             </div>
         </div>
-        <div class="bg-white rounded-lg shadow p-4 stat-card">
-            <div class="flex items-center justify-between">
-                <div><p class="text-gray-500 text-sm">Com Laudo de Restrição</p><p class="text-3xl font-bold" id="totalLaudoSim">0</p></div>
-                <div class="bg-red-100 rounded-full p-3"><span class="text-red-600 text-xl">⚠️</span></div>
-            </div>
-        </div>
-        <div class="bg-white rounded-lg shadow p-4 stat-card">
-            <div class="flex items-center justify-between">
-                <div><p class="text-gray-500 text-sm">Funcionários Ativos</p><p class="text-3xl font-bold" id="totalAtivos">0</p></div>
-                <div class="bg-green-100 rounded-full p-3"><span class="text-green-600 text-xl">✅</span></div>
-            </div>
-        </div>
-    </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        <div class="bg-white rounded-lg shadow p-4"><h3 class="text-lg font-semibold mb-4">📊 Funcionários por Unidade Escolar</h3><canvas id="graficoUnidades" height="200"></canvas></div>
-        <div class="bg-white rounded-lg shadow p-4"><h3 class="text-lg font-semibold mb-4">📊 Funcionários por Cargo/Situação</h3><canvas id="graficoCargos" height="200"></canvas></div>
-    </div>
-
-    <div class="bg-white rounded-lg shadow p-4">
-        <div class="flex justify-between items-center mb-4"><h3 class="text-lg font-semibold">🎂 Aniversariantes do Mês</h3><span class="text-sm text-gray-500" id="mesAtual"></span></div>
-        <div id="listaAniversariantes" class="space-y-2"><p class="text-gray-500 text-center py-4">Carregando...</p></div>
-    </div>
-</div>
-
-<!-- MODAL LAUDO - adicione antes do fechamento do body -->
-<div id="modalLaudo" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-    <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] flex flex-col">
-        <div class="flex justify-between items-center mb-4 border-b pb-3">
-            <h3 class="text-xl font-bold text-red-600">⚠️ Funcionários com Laudo de Restrição</h3>
-            <button onclick="fecharModalLaudo()" class="text-gray-500 text-2xl hover:text-gray-700">&times;</button>
-        </div>
-        <div id="listaLaudo" class="overflow-y-auto flex-1"></div>
-        <div class="mt-4 pt-3 border-t flex justify-end">
-            <button onclick="fecharModalLaudo()" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Fechar</button>
-        </div>
-    </div>
-</div>
 
         <!-- CADASTRO -->
         <div id="abaCadastro" style="display: none;">
@@ -187,17 +187,59 @@
         </div>
     </div>
 
-    <!-- MODAL LAUDO -->
-    <div id="modalLaudo" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-        <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] flex flex-col">
+    <!-- MODAL DETALHES -->
+    <div id="modalDetalhes" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[85vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-4 border-b pb-3">
-                <h3 class="text-xl font-bold text-red-600">⚠️ Funcionários com Laudo de Restrição</h3>
-                <button onclick="fecharModalLaudo()" class="text-gray-500 text-2xl hover:text-gray-700">&times;</button>
+                <h3 class="text-xl font-bold">📋 Detalhes do Funcionário</h3>
+                <button onclick="fecharModal()" class="text-gray-500 text-2xl hover:text-gray-700">&times;</button>
             </div>
-            <div id="listaLaudo" class="overflow-y-auto flex-1"></div>
-            <div class="mt-4 pt-3 border-t flex justify-end">
-                <button onclick="fecharModalLaudo()" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Fechar</button>
+            <div id="conteudoModal" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
+        </div>
+    </div>
+
+    <!-- MODAL EDIÇÃO -->
+    <div id="modalEdicao" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[85vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4 border-b pb-3">
+                <h3 class="text-xl font-bold">✏️ Editar Funcionário</h3>
+                <button onclick="fecharModalEdicao()" class="text-gray-500 text-2xl hover:text-gray-700">&times;</button>
             </div>
+            <form id="formEdicao" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input type="hidden" id="editNomeOriginal">
+                <div><label class="block text-sm font-medium mb-1">Nome Completo *</label><input type="text" id="editNomeCompleto" required class="w-full border p-2 rounded"></div>
+                <div><label class="block text-sm font-medium mb-1">Unidade Escolar</label><input type="text" id="editUnidadeEscolar" class="w-full border p-2 rounded"></div>
+                <div><label class="block text-sm font-medium mb-1">Função</label><input type="text" id="editFuncao" class="w-full border p-2 rounded"></div>
+                <div><label class="block text-sm font-medium mb-1">Endereço</label><input type="text" id="editEndereco" class="w-full border p-2 rounded"></div>
+                <div><label class="block text-sm font-medium mb-1">Telefone para Contato</label><input type="text" id="editTelefoneContato" class="w-full border p-2 rounded"></div>
+                <div><label class="block text-sm font-medium mb-1">Telefone para Emergências</label><input type="text" id="editTelefoneEmergencia" class="w-full border p-2 rounded"></div>
+                <div><label class="block text-sm font-medium mb-1">Matrícula</label><input type="number" id="editMatricula" class="w-full border p-2 rounded"></div>
+                <div><label class="block text-sm font-medium mb-1">Data de Nascimento</label><input type="date" id="editDataNascimento" class="w-full border p-2 rounded"></div>
+                <div><label class="block text-sm font-medium mb-1">Local Atual de Trabalho e Função</label><input type="text" id="editLocalTrabalho" class="w-full border p-2 rounded"></div>
+                <div><label class="block text-sm font-medium mb-1">Cor/Raça</label><select id="editCorRaca" class="w-full border p-2 rounded"><option value="">Selecione</option><option>Branca</option><option>Preta</option><option>Parda</option><option>Amarela</option><option>Indígena</option></select></div>
+                
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium mb-1">Foto do Funcionário</label>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <div class="flex gap-2 items-center"><input type="file" id="editUploadFoto" accept="image/*" class="flex-1 border p-2 rounded"><button type="button" id="btnEditUploadFoto" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">📤 Upload</button></div>
+                            <p class="text-xs text-gray-500 mt-1">Clique em Upload para enviar a nova foto</p>
+                            <input type="hidden" id="editFoto" class="w-full border p-2 rounded mt-2">
+                            <div class="mt-2"><label class="text-xs text-gray-600">OU cole o link da foto:</label><input type="url" id="editFotoLink" class="w-full border p-2 rounded mt-1" placeholder="https://..."></div>
+                        </div>
+                        <div id="previewFotoEdicao" class="hidden"><img id="previewImagemEdicao" class="h-32 w-32 object-cover rounded-full border-2 border-blue-500"><button type="button" id="btnLimparPreviewEdit" class="text-red-500 text-sm mt-1">✖ Remover prévia</button></div>
+                    </div>
+                </div>
+                
+                <div><label class="block text-sm font-medium mb-1">E-mail</label><input type="email" id="editEmail" class="w-full border p-2 rounded"></div>
+                <div><label class="block text-sm font-medium mb-1">Laudo de Restrição</label><select id="editLaudoRestricao" class="w-full border p-2 rounded"><option value="">Selecione</option><option>Sim</option><option>Não</option><option>Em análise</option></select></div>
+                <div><label class="block text-sm font-medium mb-1">Cargo/Situação</label><select id="editCargoSituacao" class="w-full border p-2 rounded"><option value="">Selecione</option><option>Efetivo</option><option>Comissionado</option><option>Contratado</option><option>Estagiário</option><option>Temporário</option><option>Afastado</option></select></div>
+                <div class="md:col-span-2"><label class="block text-sm font-medium mb-1">Observações</label><textarea id="editObservacoes" rows="3" class="w-full border p-2 rounded" placeholder="Informações adicionais..."></textarea></div>
+                <div class="md:col-span-2 flex justify-end gap-2">
+                    <button type="button" onclick="fecharModalEdicao()" class="bg-gray-500 text-white px-4 py-2 rounded">Cancelar</button>
+                    <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">💾 SALVAR ALTERAÇÕES</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -775,7 +817,7 @@
             for (const f of data) {
                 html += `<tr><td>${f['Nome Completo'] || '-'}</td><td>${f['Unidade Escolar'] || '-'}</td><td>${f['Função'] || '-'}</td><td>${f['Cargo/Situação'] || '-'}</td><td>${formatarData(f['Data de Nascimento'])}</td><td>${f['E-mail'] || '-'}</td></tr>`;
             }
-            html += `</tbody>}</table></body></html>`;
+            html += `</tbody></table></body></html>`;
             const win = window.open();
             win.document.write(html);
             win.document.close();
