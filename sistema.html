@@ -14,8 +14,6 @@
         .stat-card:hover { transform: translateY(-5px); }
         @media print { .no-print { display: none; } .print-only { display: block; } }
         .print-only { display: none; }
-        .documento-item { transition: all 0.2s; }
-        .documento-item:hover { background-color: #f3f4f6; }
     </style>
 </head>
 <body class="bg-gray-100 p-8">
@@ -50,6 +48,7 @@
 
         <!-- DASHBOARD -->
         <div id="abaDashboard">
+            <!-- BOTÃO VER FUNCIONÁRIOS COM LAUDO -->
             <div class="flex gap-2 mb-6">
                 <button id="btnVerLaudo" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-semibold transition flex items-center justify-center gap-2 shadow">
                     <span class="text-xl">⚠️</span>
@@ -232,12 +231,12 @@
                     </div>
                 </div>
                 
-                <!-- NOVA SEÇÃO DE DOCUMENTOS NA EDIÇÃO -->
+                <!-- NOVA SEÇÃO DE DOCUMENTOS -->
                 <div class="md:col-span-2 border-t pt-4">
                     <label class="block text-lg font-semibold mb-3">📄 Documentos do Funcionário</label>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
                         <select id="tipoDocumentoEdicao" class="border p-2 rounded">
-                            <option value="">Selecione o tipo de documento</option>
+                            <option value="">Selecione o tipo</option>
                             <option value="RG">RG</option>
                             <option value="CPF">CPF</option>
                             <option value="CTPS">CTPS (Carteira de Trabalho)</option>
@@ -312,7 +311,7 @@
             } catch (err) { console.error('Erro ao registrar auditoria:', err); }
         }
 
-        // FUNÇÕES DE DOCUMENTOS
+        // FUNÇÕES DE DOCUMENTOS (NOVAS)
         async function uploadDocumento(arquivo, nomeFuncionario, tipoDocumento) {
             try {
                 const extensao = arquivo.name.split('.').pop();
@@ -422,7 +421,7 @@
             documentos.forEach(doc => {
                 const dataUpload = new Date(doc.data_upload).toLocaleDateString('pt-BR');
                 html += `
-                    <div class="documento-item border rounded p-3 flex justify-between items-center">
+                    <div class="border rounded p-3 flex justify-between items-center">
                         <div class="flex-1">
                             <div class="flex items-center gap-2">
                                 <span class="text-2xl">📄</span>
@@ -457,7 +456,7 @@
             }
         };
 
-        // FUNÇÃO PARA LISTAR FUNCIONÁRIOS COM LAUDO
+        // FUNÇÃO PARA LISTAR FUNCIONÁRIOS COM LAUDO (ORIGINAL MANTIDA)
         async function listarFuncionariosComLaudo() {
             const modal = document.getElementById('modalLaudo');
             const listaDiv = document.getElementById('listaLaudo');
@@ -566,6 +565,7 @@
         btnUsuarios.onclick = () => setAba('usuarios');
         btnAuditoria.onclick = () => setAba('auditoria');
 
+        // Botão principal
         document.getElementById('btnVerLaudo').onclick = listarFuncionariosComLaudo;
 
         async function verificarAuth() {
@@ -586,10 +586,7 @@
             }
         }
 
-        document.getElementById('btnLogout').onclick = async () => { 
-            await supabaseSistema.auth.signOut(); 
-            window.location.href = 'index.html'; 
-        };
+        document.getElementById('btnLogout').onclick = async () => { await supabaseSistema.auth.signOut(); window.location.href = 'index.html'; };
 
         async function carregarDashboard() {
             const { data, error } = await supabaseSistema.from('tblCadastro').select('*');
@@ -751,7 +748,7 @@
             if (error) alert('❌ Erro: ' + error.message);
             else { 
                 await registrarAuditoria('CADASTRO', dados['Nome Completo'], null, dados);
-                alert('✅ Cadastrado! Agora você pode adicionar documentos na edição.'); 
+                alert('✅ Cadastrado!'); 
                 document.getElementById('formFuncionario').reset();
                 document.getElementById('previewFotoCadastro').classList.add('hidden');
                 document.getElementById('foto').value = '';
@@ -1051,7 +1048,7 @@
             for (const f of data) {
                 html += `<tr><td>${f['Nome Completo'] || '-'}</td><td>${f['Unidade Escolar'] || '-'}</td><td>${f['Função'] || '-'}</td><td>${f['Cargo/Situação'] || '-'}</td><td>${formatarData(f['Data de Nascimento'])}</td><td>${f['E-mail'] || '-'}</td></tr>`;
             }
-            html += `</tbody>}</table></body></html>`;
+            html += `</tbody></table></body></html>`;
             const win = window.open();
             win.document.write(html);
             win.document.close();
