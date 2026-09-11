@@ -210,17 +210,22 @@
         <div id="abaAuditoria" style="display: none;">
             <div class="bg-white rounded-lg shadow p-6">
                 <h2 class="text-xl font-semibold mb-4">📜 Histórico de Alterações</h2>
-                <div class="flex gap-2 mb-4 flex-wrap">
+                <div class="flex gap-2 mb-4 flex-wrap items-center">
                     <select id="filtroAcao" class="border p-2 rounded">
                         <option value="">Todas as ações</option>
                         <option value="CADASTRO">➕ Cadastros</option>
                         <option value="EDIÇÃO">✏️ Edições</option>
                         <option value="EXCLUSÃO">🗑️ Exclusões</option>
                     </select>
-                    <button id="btnFiltrarHistorico" class="bg-blue-500 text-white px-4 py-2 rounded">Filtrar</button>
-                    <button id="btnLimparHistorico" class="bg-gray-500 text-white px-4 py-2 rounded">Limpar</button>
+                    <select id="filtroUsuario" class="border p-2 rounded min-w-[220px]">
+                        <option value="">Todos os usuários</option>
+                    </select>
+                    <button id="btnFiltrarHistorico" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">🔍 Filtrar</button>
+                    <button id="btnLimparHistorico" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">🧹 Limpar</button>
                 </div>
-                <div id="listaHistorico" class="space-y-3 max-h-96 overflow-y-auto"><p class="text-gray-500 text-center py-4">Carregando histórico...</p></div>
+                <div id="listaHistorico" class="space-y-3 max-h-96 overflow-y-auto">
+                    <p class="text-gray-500 text-center py-4">Carregando histórico...</p>
+                </div>
             </div>
         </div>
     </div>
@@ -717,7 +722,7 @@
         const btnUsuarios = document.getElementById('btnAbaUsuarios');
         const btnAuditoria = document.getElementById('btnAbaAuditoria');
 
-        function setAba(aba) {
+        async function setAba(aba) {
             abaDashboard.style.display = 'none';
             abaCadastro.style.display = 'none';
             abaBusca.style.display = 'none';
@@ -751,7 +756,8 @@
             } else if (aba === 'auditoria') {
                 abaAuditoria.style.display = 'block';
                 btnAuditoria.className = btnClassActive;
-                carregarHistorico('');
+                await carregarUsuariosDoHistorico();
+                await carregarHistorico('', '');
             }
         }
 
@@ -1202,9 +1208,45 @@
         };
 
         // ============================================
-        // AUDITORIA (CORRIGIDO)
+        // AUDITORIA (com filtro por ação E por usuário)
         // ============================================
-        async function carregarHistorico(filtro = '') {
+        let usuariosHistoricoCarregados = false;
+
+        async function carregarUsuariosDoHistorico() {
+            const select = document.getElementById('filtroUsuario');
+            
+            try {
+                const { data, error } = await supabaseSistema
+                    .from('auditoria_funcionarios')
+                    .select('usuario');
+                
+                if (error) {
+                    console.error('Erro ao carregar usuários do histórico:', error);
+                    return;
+                }
+                
+                const usuariosUnicos = [...new Set((data || []).map(u => u.usuario).filter(Boolean))].sort();
+                
+                const valorAtual = select.value;
+                
+                let html = '<option value="">Todos os usuários</option>';
+                usuariosUnicos.forEach(u => {
+                    html += `<option value="${u}">${u}</option>`;
+                });
+                
+                select.innerHTML = html;
+                
+                if (valorAtual && usuariosUnicos.includes(valorAtual)) {
+                    select.value = valorAtual;
+                }
+                
+                usuariosHistoricoCarregados = true;
+            } catch (err) {
+                console.error('Erro inesperado ao carregar usuários:', err);
+            }
+        }
+
+        async function carregarHistorico(filtroAcao = '', filtroUsuario = '') {
             const lista = document.getElementById('listaHistorico');
             lista.innerHTML = '<p class="text-gray-500 text-center py-4">⏳ Carregando histórico...</p>';
             
@@ -1214,8 +1256,12 @@
                     .select('*')
                     .order('data_hora', { ascending: false });
                 
-                if (filtro && filtro.trim() !== '') {
-                    query = query.eq('acao', filtro);
+                if (filtroAcao && filtroAcao.trim() !== '') {
+                    query = query.eq('acao', filtroAcao);
+                }
+                
+                if (filtroUsuario && filtroUsuario.trim() !== '') {
+                    query = query.eq('usuario', filtroUsuario);
                 }
                 
                 const { data, error } = await query.limit(100);
@@ -1227,25 +1273,40 @@
                 }
                 
                 if (!data || data.length === 0) {
-                    const msg = filtro 
-                        ? `Nenhum registro encontrado para a ação "${filtro}".`
-                        : 'Nenhum registro encontrado.';
+                    let msg = 'Nenhum registro encontrado';
+                    const filtrosAtivos = [];
+                    if (filtroAcao) filtrosAtivos.push(`ação "${filtroAcao}"`);
+                    if (filtroUsuario) filtrosAtivos.push(`usuário "${filtroUsuario}"`);
+                    
+                    if (filtrosAtivos.length > 0) {
+                        msg += ` para ${filtrosAtivos.join(' e ')}.`;
+                    } else {
+                        msg += '.';
+                    }
+                    
                     lista.innerHTML = `<p class="text-gray-400 text-center py-4">${msg}</p>`;
                     return;
                 }
                 
+                const filtrosAtivos = [];
+                if (filtroAcao) filtrosAtivos.push(filtroAcao);
+                if (filtroUsuario) filtrosAtivos.push(filtroUsuario);
+                const textoFiltros = filtrosAtivos.length > 0 
+                    ? ` - Filtros: ${filtrosAtivos.join(' + ')}` 
+                    : ' - Todos';
+                
                 let html = `<div class="mb-3 p-2 bg-blue-50 rounded-lg text-center text-sm font-semibold text-blue-700">
-                    📊 ${data.length} registro(s) ${filtro ? `- Filtro: ${filtro}` : '- Todos'}
+                    📊 ${data.length} registro(s)${textoFiltros}
                 </div>`;
                 
+                const cores = {
+                    'CADASTRO': 'bg-green-100 text-green-800',
+                    'EDIÇÃO': 'bg-yellow-100 text-yellow-800',
+                    'EXCLUSÃO': 'bg-red-100 text-red-800'
+                };
+                const icones = { 'CADASTRO': '➕', 'EDIÇÃO': '✏️', 'EXCLUSÃO': '🗑️' };
+                
                 data.forEach(h => {
-                    const cores = {
-                        'CADASTRO': 'bg-green-100 text-green-800',
-                        'EDIÇÃO': 'bg-yellow-100 text-yellow-800',
-                        'EXCLUSÃO': 'bg-red-100 text-red-800'
-                    };
-                    const icones = { 'CADASTRO': '➕', 'EDIÇÃO': '✏️', 'EXCLUSÃO': '🗑️' };
-                    
                     html += `
                         <div class="border p-3 rounded mb-2">
                             <div class="flex justify-between items-start">
@@ -1270,13 +1331,15 @@
         }
 
         document.getElementById('btnFiltrarHistorico').onclick = () => {
-            const filtro = document.getElementById('filtroAcao').value;
-            carregarHistorico(filtro);
+            const filtroAcao = document.getElementById('filtroAcao').value;
+            const filtroUsuario = document.getElementById('filtroUsuario').value;
+            carregarHistorico(filtroAcao, filtroUsuario);
         };
 
         document.getElementById('btnLimparHistorico').onclick = () => {
             document.getElementById('filtroAcao').value = '';
-            carregarHistorico('');
+            document.getElementById('filtroUsuario').value = '';
+            carregarHistorico('', '');
         };
 
         // ============================================
