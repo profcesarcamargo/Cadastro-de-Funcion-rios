@@ -210,7 +210,16 @@
         <div id="abaAuditoria" style="display: none;">
             <div class="bg-white rounded-lg shadow p-6">
                 <h2 class="text-xl font-semibold mb-4">📜 Histórico de Alterações</h2>
-                <div class="flex gap-2 mb-4 flex-wrap"><select id="filtroAcao" class="border p-2 rounded"><option value="">Todas as ações</option><option value="CADASTRO">➕ Cadastros</option><option value="EDIÇÃO">✏️ Edições</option><option value="EXCLUSÃO">🗑️ Exclusões</option></select><button id="btnFiltrarHistorico" class="bg-blue-500 text-white px-4 py-2 rounded">Filtrar</button><button id="btnLimparHistorico" class="bg-gray-500 text-white px-4 py-2 rounded">Limpar</button></div>
+                <div class="flex gap-2 mb-4 flex-wrap">
+                    <select id="filtroAcao" class="border p-2 rounded">
+                        <option value="">Todas as ações</option>
+                        <option value="CADASTRO">➕ Cadastros</option>
+                        <option value="EDIÇÃO">✏️ Edições</option>
+                        <option value="EXCLUSÃO">🗑️ Exclusões</option>
+                    </select>
+                    <button id="btnFiltrarHistorico" class="bg-blue-500 text-white px-4 py-2 rounded">Filtrar</button>
+                    <button id="btnLimparHistorico" class="bg-gray-500 text-white px-4 py-2 rounded">Limpar</button>
+                </div>
                 <div id="listaHistorico" class="space-y-3 max-h-96 overflow-y-auto"><p class="text-gray-500 text-center py-4">Carregando histórico...</p></div>
             </div>
         </div>
@@ -579,7 +588,6 @@
             try {
                 const dadosUpload = await uploadDocumento(arquivo, nomeFuncionario, tipoDocumento);
                 
-                // Salvar no banco diretamente (já que o funcionário existe)
                 const { error } = await supabaseSistema
                     .from('tblDocumentos')
                     .insert([{
@@ -743,7 +751,7 @@
             } else if (aba === 'auditoria') {
                 abaAuditoria.style.display = 'block';
                 btnAuditoria.className = btnClassActive;
-                carregarHistorico();
+                carregarHistorico('');
             }
         }
 
@@ -1003,7 +1011,6 @@
         window.excluirFuncionario = async function(nome) {
             if (!confirm(`Tem certeza que deseja excluir "${nome}"? Esta ação não pode ser desfeita!`)) return;
             
-            // Buscar dados antes de excluir para auditoria
             const { data: dadosAntigos } = await supabaseSistema.from('tblCadastro').select('*').eq('"Nome Completo"', nome).single();
             
             const { error } = await supabaseSistema.from('tblCadastro').delete().eq('"Nome Completo"', nome);
@@ -1041,7 +1048,6 @@
             document.getElementById('editCargoSituacao').value = data['Cargo/Situação'] || '';
             document.getElementById('editObservacoes').value = data['Observações'] || '';
             
-            // Preview da foto
             const fotoUrl = data['Foto (link da foto)'];
             const previewDiv = document.getElementById('previewFotoEdicao');
             const previewImg = document.getElementById('previewImagemEdicao');
@@ -1052,7 +1058,6 @@
                 previewDiv.classList.add('hidden');
             }
             
-            // Carregar documentos
             await atualizarListaDocumentosEdicao(nome);
             
             document.getElementById('modalEdicao').classList.remove('hidden');
@@ -1111,7 +1116,6 @@
             const nomeOriginal = document.getElementById('editNomeOriginal').value;
             const fotoUrl = document.getElementById('editFoto').value || document.getElementById('editFotoLink').value;
             
-            // Buscar dados antigos para auditoria
             const { data: dadosAntigos } = await supabaseSistema.from('tblCadastro').select('*').eq('"Nome Completo"', nomeOriginal).single();
             
             const dadosNovos = {
@@ -1132,7 +1136,6 @@
                 "Observações": document.getElementById('editObservacoes').value || null
             };
             
-            // Se o nome mudou, precisamos atualizar também os documentos
             const nomeMudou = nomeOriginal !== dadosNovos['Nome Completo'];
             
             const { error } = await supabaseSistema
@@ -1142,7 +1145,6 @@
             
             if (error) { alert('❌ Erro ao atualizar: ' + error.message); return; }
             
-            // Se o nome mudou, atualizar os documentos
             if (nomeMudou) {
                 const { error: docError } = await supabaseSistema
                     .from('tblDocumentos')
@@ -1200,28 +1202,78 @@
         };
 
         // ============================================
-        // AUDITORIA
+        // AUDITORIA (CORRIGIDO)
         // ============================================
         async function carregarHistorico(filtro = '') {
-            let query = supabaseSistema.from('auditoria_funcionarios').select('*').order('data_hora', { ascending: false });
-            if (filtro) query = query.eq('acao', filtro);
-            const { data, error } = await query.limit(100);
-            if (error) { console.error('Erro:', error); return; }
             const lista = document.getElementById('listaHistorico');
-            if (data.length === 0) { lista.innerHTML = '<p class="text-gray-400 text-center py-4">Nenhum registro encontrado.</p>'; return; }
-            let html = '';
-            data.forEach(h => {
-                const cores = { 'CADASTRO': 'bg-green-100 text-green-800', 'EDIÇÃO': 'bg-yellow-100 text-yellow-800', 'EXCLUSÃO': 'bg-red-100 text-red-800' };
-                const icones = { 'CADASTRO': '➕', 'EDIÇÃO': '✏️', 'EXCLUSÃO': '🗑️' };
-                html += `<div class="border p-3 rounded"><div class="flex justify-between items-start"><div><span class="px-2 py-1 rounded text-sm font-bold ${cores[h.acao] || 'bg-gray-100'}">${icones[h.acao] || h.acao}</span><span class="ml-2 font-bold">${h.nome_funcionario}</span></div><span class="text-xs text-gray-500">${formatarDataHora(h.data_hora)}</span></div><div class="text-sm text-gray-600 mt-1">👤 ${h.usuario}</div></div>`;
-            });
-            lista.innerHTML = html;
+            lista.innerHTML = '<p class="text-gray-500 text-center py-4">⏳ Carregando histórico...</p>';
+            
+            try {
+                let query = supabaseSistema
+                    .from('auditoria_funcionarios')
+                    .select('*')
+                    .order('data_hora', { ascending: false });
+                
+                if (filtro && filtro.trim() !== '') {
+                    query = query.eq('acao', filtro);
+                }
+                
+                const { data, error } = await query.limit(100);
+                
+                if (error) {
+                    console.error('Erro ao carregar histórico:', error);
+                    lista.innerHTML = `<p class="text-red-500 text-center py-4">❌ Erro ao carregar histórico: ${error.message}</p>`;
+                    return;
+                }
+                
+                if (!data || data.length === 0) {
+                    const msg = filtro 
+                        ? `Nenhum registro encontrado para a ação "${filtro}".`
+                        : 'Nenhum registro encontrado.';
+                    lista.innerHTML = `<p class="text-gray-400 text-center py-4">${msg}</p>`;
+                    return;
+                }
+                
+                let html = `<div class="mb-3 p-2 bg-blue-50 rounded-lg text-center text-sm font-semibold text-blue-700">
+                    📊 ${data.length} registro(s) ${filtro ? `- Filtro: ${filtro}` : '- Todos'}
+                </div>`;
+                
+                data.forEach(h => {
+                    const cores = {
+                        'CADASTRO': 'bg-green-100 text-green-800',
+                        'EDIÇÃO': 'bg-yellow-100 text-yellow-800',
+                        'EXCLUSÃO': 'bg-red-100 text-red-800'
+                    };
+                    const icones = { 'CADASTRO': '➕', 'EDIÇÃO': '✏️', 'EXCLUSÃO': '🗑️' };
+                    
+                    html += `
+                        <div class="border p-3 rounded mb-2">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <span class="px-2 py-1 rounded text-sm font-bold ${cores[h.acao] || 'bg-gray-100 text-gray-800'}">
+                                        ${icones[h.acao] || ''} ${h.acao || 'N/A'}
+                                    </span>
+                                    <span class="ml-2 font-bold">${h.nome_funcionario || '-'}</span>
+                                </div>
+                                <span class="text-xs text-gray-500">${formatarDataHora(h.data_hora)}</span>
+                            </div>
+                            <div class="text-sm text-gray-600 mt-1">👤 ${h.usuario || 'N/A'}</div>
+                        </div>
+                    `;
+                });
+                
+                lista.innerHTML = html;
+            } catch (err) {
+                console.error('Erro inesperado:', err);
+                lista.innerHTML = `<p class="text-red-500 text-center py-4">❌ Erro inesperado: ${err.message}</p>`;
+            }
         }
 
         document.getElementById('btnFiltrarHistorico').onclick = () => {
             const filtro = document.getElementById('filtroAcao').value;
             carregarHistorico(filtro);
         };
+
         document.getElementById('btnLimparHistorico').onclick = () => {
             document.getElementById('filtroAcao').value = '';
             carregarHistorico('');
@@ -1360,7 +1412,6 @@
                 return;
             }
             
-            // Salvar documentos temporários
             if (documentosTemp.length > 0) {
                 try {
                     for (const doc of documentosTemp) {
@@ -1392,7 +1443,6 @@
             document.getElementById('foto').value = '';
             arquivoSelecionado = null;
             
-            // Limpar documentos temporários
             documentosTemp = [];
             atualizarListaDocumentosCadastro();
             
