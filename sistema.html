@@ -637,7 +637,7 @@
             try {
                 const { data, error } = await supabaseSistema
                     .from('tblCadastro')
-                    .select('"Nome Completo", "Função", "Unidade Escolar", "Telefone para Contato", "E-mail"')
+                    .select('*')
                     .eq('"Laudo de Restrição"', 'Sim')
                     .order('"Nome Completo"');
                 
@@ -649,15 +649,27 @@
                 }
                 
                 let html = `<div class="mb-3 p-2 bg-red-100 rounded-lg text-center font-bold text-red-700">📊 TOTAL: ${data.length} funcionário(s) com laudo de restrição</div>`;
+                html += '<p class="text-xs text-gray-500 text-center mb-3">👆 Clique no funcionário para ver a ficha completa com documentos</p>';
                 html += '<div class="space-y-3">';
                 
                 data.forEach((func, index) => {
+                    const nomeEsc = (func['Nome Completo'] || '').replace(/'/g, "\\'");
+                    const fotoUrl = func['Foto (link da foto)'];
+                    
                     html += `
-                        <div class="border rounded-lg p-4 hover:bg-red-50 transition">
+                        <div onclick="abrirFichaDoLaudo('${nomeEsc}')" 
+                             class="border rounded-lg p-4 hover:bg-red-50 hover:border-red-400 transition cursor-pointer group">
                             <div class="flex items-start gap-3">
-                                <div class="bg-red-100 rounded-full w-8 h-8 flex items-center justify-center font-bold text-red-700">${index + 1}</div>
+                                <div class="bg-red-100 rounded-full w-8 h-8 flex items-center justify-center font-bold text-red-700 flex-shrink-0">${index + 1}</div>
+                                ${fotoUrl ? 
+                                    `<img src="${fotoUrl}" class="w-12 h-12 object-cover rounded-full border-2 border-red-300 flex-shrink-0" onerror="this.style.display='none'">` : 
+                                    `<div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0"><span class="text-red-500">📸</span></div>`
+                                }
                                 <div class="flex-1">
-                                    <div class="font-bold text-gray-800 text-lg">${func['Nome Completo'] || '-'}</div>
+                                    <div class="font-bold text-gray-800 text-lg group-hover:text-red-700 flex items-center gap-2">
+                                        ${func['Nome Completo'] || '-'}
+                                        <span class="text-xs bg-red-500 text-white px-2 py-1 rounded-full opacity-0 group-hover:opacity-100 transition">👁️ Ver ficha</span>
+                                    </div>
                                     <div class="text-sm text-gray-600 mt-1">📌 ${func['Função'] || 'Função não informada'}</div>
                                     <div class="text-sm text-gray-600">🏫 ${func['Unidade Escolar'] || 'Unidade não informada'}</div>
                                     <div class="text-xs text-gray-500 mt-1">📧 ${func['E-mail'] || 'E-mail não informado'} | 📱 ${func['Telefone para Contato'] || 'Telefone não informado'}</div>
@@ -673,6 +685,12 @@
                 listaDiv.innerHTML = '<div class="text-center py-8"><p class="text-red-500 text-lg">❌ Erro ao carregar lista de funcionários.</p></div>';
             }
         }
+
+        // Função auxiliar para abrir a ficha do funcionário a partir do modal de laudo
+        window.abrirFichaDoLaudo = async function(nome) {
+            fecharModalLaudo();
+            await verDetalhes(nome);
+        };
 
         document.getElementById('btnVerLaudo').onclick = listarFuncionariosComLaudo;
 
