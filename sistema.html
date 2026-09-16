@@ -12,14 +12,20 @@
     <style>
         .stat-card { transition: transform 0.2s; }
         .stat-card:hover { transform: translateY(-5px); }
-        @media print { .no-print { display: none; } .print-only { display: block; position: static !important; left: 0 !important; } }
-        .print-only {
+        @media print { .no-print { display: none; } }
+        .pdf-container {
+            display: none;
+        }
+        .pdf-container.ativo {
+            display: block;
             position: fixed;
-            left: -9999px;
             top: 0;
-            width: 800px;
+            left: 0;
+            width: 100%;
+            z-index: 99999;
             background: white;
-            z-index: -1;
+            padding: 20px;
+            overflow: visible;
         }
         .ficha-pdf { font-family: 'Segoe UI', Arial, sans-serif; color: #222; }
         .ficha-pdf h1 { text-align: center; color: #1e40af; font-size: 22px; margin: 0 0 4px 0; }
@@ -357,8 +363,8 @@
         </div>
     </div>
 
-    <div class="print-only" id="relatorioPDF"></div>
-    <div class="print-only" id="fichaIndividualPDF"></div>
+    <div class="pdf-container" id="relatorioPDF"></div>
+    <div class="pdf-container" id="fichaIndividualPDF"></div>
 
     <script>
         const SUPABASE_URL = 'https://ndvgduxdebeiyujfrups.supabase.co';
@@ -1134,7 +1140,7 @@
             const linha = (label, valor) => `<tr><td style="width:35%;"><strong>${label}</strong></td><td>${escaparHtml(valor) || '-'}</td></tr>`;
             
             let html = `
-                <div class="ficha-pdf">
+                <div class="ficha-pdf" style="max-width:780px;margin:0 auto;">
                     <h1>📋 FICHA DO FUNCIONÁRIO</h1>
                     <h2>Secretaria Municipal de Santa Branca</h2>
                     
@@ -1203,25 +1209,34 @@
             
             const div = document.getElementById('fichaIndividualPDF');
             div.innerHTML = html;
+            div.classList.add('ativo');
             
+            // Aguarda a foto carregar
             if (fotoUrl) {
                 await aguardarImagem(fotoUrl);
             }
+            // Aguarda renderização
+            await new Promise(r => setTimeout(r, 400));
             
             const nomeArquivoSeguro = (data['Nome Completo'] || 'funcionario').replace(/[^a-z0-9]/gi, '_');
             
             const opt = {
                 margin: 10,
                 filename: `Ficha_${nomeArquivoSeguro}_${new Date().toISOString().split('T')[0]}.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
+                image: { type: 'jpeg', quality: 0.95 },
                 html2canvas: { 
-                    scale: 2, 
+                    scale: 2,
                     useCORS: true,
-                    allowTaint: false,
+                    allowTaint: true,
                     logging: false,
-                    backgroundColor: '#ffffff'
+                    backgroundColor: '#ffffff',
+                    scrollX: 0,
+                    scrollY: 0,
+                    windowWidth: document.documentElement.scrollWidth,
+                    windowHeight: document.documentElement.scrollHeight
                 },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                pagebreak: { mode: ['css', 'legacy'] }
             };
             
             try {
@@ -1230,6 +1245,7 @@
                 console.error('Erro ao gerar PDF:', err);
                 alert('❌ Erro ao gerar PDF: ' + err.message);
             } finally {
+                div.classList.remove('ativo');
                 div.innerHTML = '';
             }
         };
@@ -1595,7 +1611,13 @@
         }
 
         async function exportarPDF(data, prefixoArquivo) {
-            let html = `<h1 style="text-align:center;font-size:24px;margin-bottom:20px;">📋 Relatório de Funcionários</h1><p style="text-align:center;color:#666;">Gerado em ${new Date().toLocaleString('pt-BR')}</p><p style="text-align:center;color:#666;">Total: ${data.length} funcionários</p><hr><table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:20px;"><thead><tr>`;
+            let html = `<div style="max-width:1000px;margin:0 auto;padding:20px;background:white;">
+                <h1 style="text-align:center;font-size:24px;margin-bottom:20px;">📋 Relatório de Funcionários</h1>
+                <p style="text-align:center;color:#666;">Gerado em ${new Date().toLocaleString('pt-BR')}</p>
+                <p style="text-align:center;color:#666;">Total: ${data.length} funcionários</p>
+                <hr>
+                <table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:20px;">
+                    <thead><tr>`;
             const cabecalhos = ['Nome Completo', 'Unidade Escolar', 'Função', 'E-mail', 'Telefone para Contato', 'Cargo/Situação'];
             cabecalhos.forEach(c => { html += `<th style="border:1px solid #999;padding:6px;background:#f0f0f0;">${c}</th>`; });
             html += '</tr></thead><tbody>';
@@ -1606,22 +1628,32 @@
                 });
                 html += '</tr>';
             });
-            html += '</tbody></table>';
+            html += '</tbody></table></div>';
             
             const div = document.getElementById('relatorioPDF');
             div.innerHTML = html;
+            div.classList.add('ativo');
+            
+            // Aguarda renderização
+            await new Promise(r => setTimeout(r, 400));
             
             const opt = { 
                 margin: 10, 
                 filename: `${prefixoArquivo}_${new Date().toISOString().split('T')[0]}.pdf`, 
-                image: { type: 'jpeg', quality: 0.98 }, 
+                image: { type: 'jpeg', quality: 0.95 }, 
                 html2canvas: { 
                     scale: 2,
                     useCORS: true,
+                    allowTaint: true,
                     logging: false,
-                    backgroundColor: '#ffffff'
+                    backgroundColor: '#ffffff',
+                    scrollX: 0,
+                    scrollY: 0,
+                    windowWidth: document.documentElement.scrollWidth,
+                    windowHeight: document.documentElement.scrollHeight
                 }, 
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } 
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
+                pagebreak: { mode: ['css', 'legacy'] }
             };
             
             try {
@@ -1630,6 +1662,7 @@
                 console.error('Erro ao gerar PDF:', err);
                 alert('❌ Erro ao gerar PDF: ' + err.message);
             } finally {
+                div.classList.remove('ativo');
                 div.innerHTML = '';
             }
         }
