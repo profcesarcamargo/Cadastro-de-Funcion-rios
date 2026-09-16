@@ -910,7 +910,13 @@
                 const nomeEsc = (f['Nome Completo'] || '').replace(/'/g, "\\'");
                 const fotoUrl = f['Foto (link da foto)'];
                 const dataNascimento = formatarData(f['Data de Nascimento']);
-                html += `<div class="border rounded-lg p-4 hover:shadow"><div class="flex justify-between items-start"><div class="flex gap-4">${fotoUrl ? `<img src="${fotoUrl}" class="h-16 w-16 object-cover rounded-full" onerror="this.style.display='none'">` : '<div class="h-16 w-16 bg-gray-200 rounded-full flex items-center justify-center"><span class="text-gray-400">📸</span></div>'}<div><h3 class="font-bold text-lg">${f['Nome Completo'] || '-'}</h3><p class="text-gray-600">${f['Função'] || '-'} | ${f['Unidade Escolar'] || '-'}</p><p class="text-sm text-gray-500">📧 ${f['E-mail'] || '-'} | 📱 ${f['Telefone para Contato'] || '-'} | 🎂 ${dataNascimento}</p></div></div><div class="flex gap-2 flex-wrap"><button onclick='verDetalhes("${nomeEsc}")' class="bg-blue-500 text-white px-3 py-1 rounded">Ver</button><button onclick='abrirEdicao("${nomeEsc}")' class="bg-yellow-500 text-white px-3 py-1 rounded">✏️ Editar</button><button onclick='excluirFuncionario("${nomeEsc}")' class="bg-red-500 text-white px-3 py-1 rounded">Excluir</button></div></div></div>`;
+                
+                // Botão Excluir só aparece para administradores
+                const btnExcluir = isAdmin 
+                    ? `<button onclick='excluirFuncionario("${nomeEsc}")' class="bg-red-500 text-white px-3 py-1 rounded">Excluir</button>` 
+                    : '';
+                
+                html += `<div class="border rounded-lg p-4 hover:shadow"><div class="flex justify-between items-start"><div class="flex gap-4">${fotoUrl ? `<img src="${fotoUrl}" class="h-16 w-16 object-cover rounded-full" onerror="this.style.display='none'">` : '<div class="h-16 w-16 bg-gray-200 rounded-full flex items-center justify-center"><span class="text-gray-400">📸</span></div>'}<div><h3 class="font-bold text-lg">${f['Nome Completo'] || '-'}</h3><p class="text-gray-600">${f['Função'] || '-'} | ${f['Unidade Escolar'] || '-'}</p><p class="text-sm text-gray-500">📧 ${f['E-mail'] || '-'} | 📱 ${f['Telefone para Contato'] || '-'} | 🎂 ${dataNascimento}</p></div></div><div class="flex gap-2 flex-wrap"><button onclick='verDetalhes("${nomeEsc}")' class="bg-blue-500 text-white px-3 py-1 rounded">Ver</button><button onclick='abrirEdicao("${nomeEsc}")' class="bg-yellow-500 text-white px-3 py-1 rounded">✏️ Editar</button>${btnExcluir}</div></div></div>`;
             }
             document.getElementById('listaFuncionarios').innerHTML = html;
         }
@@ -934,7 +940,13 @@
                 const nomeEsc = (f['Nome Completo'] || '').replace(/'/g, "\\'");
                 const fotoUrl = f['Foto (link da foto)'];
                 const dataNascimento = formatarData(f['Data de Nascimento']);
-                html += `<div class="border rounded-lg p-4 hover:shadow"><div class="flex justify-between items-start"><div class="flex gap-4">${fotoUrl ? `<img src="${fotoUrl}" class="h-16 w-16 object-cover rounded-full" onerror="this.style.display='none'">` : '<div class="h-16 w-16 bg-gray-200 rounded-full flex items-center justify-center"><span class="text-gray-400">📸</span></div>'}<div><h3 class="font-bold text-lg">${f['Nome Completo'] || '-'}</h3><p class="text-gray-600">${f['Função'] || '-'} | ${f['Unidade Escolar'] || '-'}</p><p class="text-sm text-gray-500">📧 ${f['E-mail'] || '-'} | 📱 ${f['Telefone para Contato'] || '-'} | 🎂 ${dataNascimento}</p></div></div><div class="flex gap-2 flex-wrap"><button onclick='verDetalhes("${nomeEsc}")' class="bg-blue-500 text-white px-3 py-1 rounded">Ver</button><button onclick='abrirEdicao("${nomeEsc}")' class="bg-yellow-500 text-white px-3 py-1 rounded">✏️ Editar</button><button onclick='excluirFuncionario("${nomeEsc}")' class="bg-red-500 text-white px-3 py-1 rounded">Excluir</button></div></div></div>`;
+                
+                // Botão Excluir só aparece para administradores
+                const btnExcluir = isAdmin 
+                    ? `<button onclick='excluirFuncionario("${nomeEsc}")' class="bg-red-500 text-white px-3 py-1 rounded">Excluir</button>` 
+                    : '';
+                
+                html += `<div class="border rounded-lg p-4 hover:shadow"><div class="flex justify-between items-start"><div class="flex gap-4">${fotoUrl ? `<img src="${fotoUrl}" class="h-16 w-16 object-cover rounded-full" onerror="this.style.display='none'">` : '<div class="h-16 w-16 bg-gray-200 rounded-full flex items-center justify-center"><span class="text-gray-400">📸</span></div>'}<div><h3 class="font-bold text-lg">${f['Nome Completo'] || '-'}</h3><p class="text-gray-600">${f['Função'] || '-'} | ${f['Unidade Escolar'] || '-'}</p><p class="text-sm text-gray-500">📧 ${f['E-mail'] || '-'} | 📱 ${f['Telefone para Contato'] || '-'} | 🎂 ${dataNascimento}</p></div></div><div class="flex gap-2 flex-wrap"><button onclick='verDetalhes("${nomeEsc}")' class="bg-blue-500 text-white px-3 py-1 rounded">Ver</button><button onclick='abrirEdicao("${nomeEsc}")' class="bg-yellow-500 text-white px-3 py-1 rounded">✏️ Editar</button>${btnExcluir}</div></div></div>`;
             }
             document.getElementById('listaFuncionarios').innerHTML = html;
         }
@@ -1012,9 +1024,15 @@
         };
 
         // ============================================
-        // EXCLUIR FUNCIONÁRIO
+        // EXCLUIR FUNCIONÁRIO (SOMENTE ADMIN)
         // ============================================
         window.excluirFuncionario = async function(nome) {
+            // Verificação de segurança: apenas admin pode excluir
+            if (!isAdmin) {
+                alert('❌ Apenas administradores podem excluir funcionários!');
+                return;
+            }
+            
             if (!confirm(`Tem certeza que deseja excluir "${nome}"? Esta ação não pode ser desfeita!`)) return;
             
             const { data: dadosAntigos } = await supabaseSistema.from('tblCadastro').select('*').eq('"Nome Completo"', nome).single();
