@@ -12,8 +12,15 @@
     <style>
         .stat-card { transition: transform 0.2s; }
         .stat-card:hover { transform: translateY(-5px); }
-        @media print { .no-print { display: none; } .print-only { display: block; } }
-        .print-only { display: none; }
+        @media print { .no-print { display: none; } .print-only { display: block; position: static !important; left: 0 !important; } }
+        .print-only {
+            position: fixed;
+            left: -9999px;
+            top: 0;
+            width: 800px;
+            background: white;
+            z-index: -1;
+        }
         .ficha-pdf { font-family: 'Segoe UI', Arial, sans-serif; color: #222; }
         .ficha-pdf h1 { text-align: center; color: #1e40af; font-size: 22px; margin: 0 0 4px 0; }
         .ficha-pdf h2 { text-align: center; color: #555; font-size: 14px; font-weight: normal; margin: 0 0 20px 0; }
@@ -375,7 +382,7 @@
         let temMaisFuncionarios = true;
         let filtrosAtivos = { nome: '', unidade: '', funcao: '', email: '' };
         let observerScroll = null;
-        let nomeFuncionarioAberto = null; // guarda o nome do funcionário aberto no modal
+        let nomeFuncionarioAberto = null;
 
         // ============================================
         // FUNÇÕES AUXILIARES
@@ -391,6 +398,19 @@
             if (!dataISO) return '-';
             const data = new Date(dataISO);
             return data.toLocaleString('pt-BR');
+        }
+
+        // Aguarda uma imagem carregar (útil para html2canvas)
+        function aguardarImagem(src) {
+            return new Promise((resolve) => {
+                if (!src) { resolve(); return; }
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                img.onload = () => resolve();
+                img.onerror = () => resolve();
+                img.src = src;
+                setTimeout(resolve, 3000);
+            });
         }
 
         function escaparHtml(texto) {
@@ -775,7 +795,6 @@
             emailLogado = session.user.email;
             document.getElementById('nomeUsuario').innerHTML = emailLogado;
             
-            // Busca na tabela usuarios_autorizados se este usuário é admin
             try {
                 const { data, error } = await supabaseSistema
                     .from('usuarios_autorizados')
@@ -1185,13 +1204,23 @@
             const div = document.getElementById('fichaIndividualPDF');
             div.innerHTML = html;
             
+            if (fotoUrl) {
+                await aguardarImagem(fotoUrl);
+            }
+            
             const nomeArquivoSeguro = (data['Nome Completo'] || 'funcionario').replace(/[^a-z0-9]/gi, '_');
             
             const opt = {
                 margin: 10,
                 filename: `Ficha_${nomeArquivoSeguro}_${new Date().toISOString().split('T')[0]}.pdf`,
                 image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true },
+                html2canvas: { 
+                    scale: 2, 
+                    useCORS: true,
+                    allowTaint: false,
+                    logging: false,
+                    backgroundColor: '#ffffff'
+                },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
             
@@ -1199,7 +1228,7 @@
                 await html2pdf().set(opt).from(div).save();
             } catch (err) {
                 console.error('Erro ao gerar PDF:', err);
-                alert('❌ Erro ao gerar PDF. Se a foto não aparecer, pode ser bloqueio de CORS.');
+                alert('❌ Erro ao gerar PDF: ' + err.message);
             } finally {
                 div.innerHTML = '';
             }
@@ -1565,7 +1594,7 @@
             alert('✅ Excel exportado com sucesso!');
         }
 
-        function exportarPDF(data, prefixoArquivo) {
+        async function exportarPDF(data, prefixoArquivo) {
             let html = `<h1 style="text-align:center;font-size:24px;margin-bottom:20px;">📋 Relatório de Funcionários</h1><p style="text-align:center;color:#666;">Gerado em ${new Date().toLocaleString('pt-BR')}</p><p style="text-align:center;color:#666;">Total: ${data.length} funcionários</p><hr><table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:20px;"><thead><tr>`;
             const cabecalhos = ['Nome Completo', 'Unidade Escolar', 'Função', 'E-mail', 'Telefone para Contato', 'Cargo/Situação'];
             cabecalhos.forEach(c => { html += `<th style="border:1px solid #999;padding:6px;background:#f0f0f0;">${c}</th>`; });
@@ -1581,8 +1610,28 @@
             
             const div = document.getElementById('relatorioPDF');
             div.innerHTML = html;
-            const opt = { margin: 10, filename: `${prefixoArquivo}_${new Date().toISOString().split('T')[0]}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } };
-            html2pdf().set(opt).from(div).save().then(() => { div.innerHTML = ''; });
+            
+            const opt = { 
+                margin: 10, 
+                filename: `${prefixoArquivo}_${new Date().toISOString().split('T')[0]}.pdf`, 
+                image: { type: 'jpeg', quality: 0.98 }, 
+                html2canvas: { 
+                    scale: 2,
+                    useCORS: true,
+                    logging: false,
+                    backgroundColor: '#ffffff'
+                }, 
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } 
+            };
+            
+            try {
+                await html2pdf().set(opt).from(div).save();
+            } catch (err) {
+                console.error('Erro ao gerar PDF:', err);
+                alert('❌ Erro ao gerar PDF: ' + err.message);
+            } finally {
+                div.innerHTML = '';
+            }
         }
 
         // ============================================
