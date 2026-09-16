@@ -7,27 +7,22 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
         .stat-card { transition: transform 0.2s; }
         .stat-card:hover { transform: translateY(-5px); }
         @media print { .no-print { display: none; } }
         .pdf-container {
-            display: none;
-        }
-        .pdf-container.ativo {
-            display: block;
             position: fixed;
+            left: -10000px;
             top: 0;
-            left: 0;
-            width: 100%;
-            z-index: 99999;
+            width: 800px;
             background: white;
-            padding: 20px;
-            overflow: visible;
+            z-index: -1;
         }
-        .ficha-pdf { font-family: 'Segoe UI', Arial, sans-serif; color: #222; }
+        .ficha-pdf { font-family: 'Segoe UI', Arial, sans-serif; color: #222; padding: 20px; }
         .ficha-pdf h1 { text-align: center; color: #1e40af; font-size: 22px; margin: 0 0 4px 0; }
         .ficha-pdf h2 { text-align: center; color: #555; font-size: 14px; font-weight: normal; margin: 0 0 20px 0; }
         .ficha-pdf .topo { display: flex; align-items: center; gap: 24px; border-bottom: 2px solid #1e40af; padding-bottom: 16px; margin-bottom: 16px; }
@@ -1140,7 +1135,7 @@
             const linha = (label, valor) => `<tr><td style="width:35%;"><strong>${label}</strong></td><td>${escaparHtml(valor) || '-'}</td></tr>`;
             
             let html = `
-                <div class="ficha-pdf" style="max-width:780px;margin:0 auto;">
+                <div class="ficha-pdf">
                     <h1>📋 FICHA DO FUNCIONÁRIO</h1>
                     <h2>Secretaria Municipal de Santa Branca</h2>
                     
@@ -1209,43 +1204,59 @@
             
             const div = document.getElementById('fichaIndividualPDF');
             div.innerHTML = html;
-            div.classList.add('ativo');
             
-            // Aguarda a foto carregar
             if (fotoUrl) {
                 await aguardarImagem(fotoUrl);
             }
-            // Aguarda renderização
-            await new Promise(r => setTimeout(r, 400));
+            await new Promise(r => setTimeout(r, 300));
             
             const nomeArquivoSeguro = (data['Nome Completo'] || 'funcionario').replace(/[^a-z0-9]/gi, '_');
             
-            const opt = {
-                margin: 10,
-                filename: `Ficha_${nomeArquivoSeguro}_${new Date().toISOString().split('T')[0]}.pdf`,
-                image: { type: 'jpeg', quality: 0.95 },
-                html2canvas: { 
+            try {
+                const canvas = await html2canvas(div, {
                     scale: 2,
                     useCORS: true,
-                    allowTaint: true,
+                    allowTaint: false,
                     logging: false,
                     backgroundColor: '#ffffff',
-                    scrollX: 0,
-                    scrollY: 0,
-                    windowWidth: document.documentElement.scrollWidth,
-                    windowHeight: document.documentElement.scrollHeight
-                },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-                pagebreak: { mode: ['css', 'legacy'] }
-            };
-            
-            try {
-                await html2pdf().set(opt).from(div).save();
+                    width: div.scrollWidth,
+                    height: div.scrollHeight,
+                    windowWidth: div.scrollWidth,
+                    windowHeight: div.scrollHeight
+                });
+                
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF({
+                    unit: 'mm',
+                    format: 'a4',
+                    orientation: 'portrait'
+                });
+                
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = pdf.internal.pageSize.getHeight();
+                const imgWidth = pdfWidth - 20;
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                
+                let heightLeft = imgHeight;
+                let position = 10;
+                
+                const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                
+                pdf.addImage(imgData, 'JPEG', 10, position, imgWidth, imgHeight);
+                heightLeft -= (pdfHeight - 20);
+                
+                while (heightLeft > 0) {
+                    position = heightLeft - imgHeight + 10;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'JPEG', 10, position, imgWidth, imgHeight);
+                    heightLeft -= (pdfHeight - 20);
+                }
+                
+                pdf.save(`Ficha_${nomeArquivoSeguro}_${new Date().toISOString().split('T')[0]}.pdf`);
             } catch (err) {
                 console.error('Erro ao gerar PDF:', err);
                 alert('❌ Erro ao gerar PDF: ' + err.message);
             } finally {
-                div.classList.remove('ativo');
                 div.innerHTML = '';
             }
         };
@@ -1611,7 +1622,7 @@
         }
 
         async function exportarPDF(data, prefixoArquivo) {
-            let html = `<div style="max-width:1000px;margin:0 auto;padding:20px;background:white;">
+            let html = `<div style="padding:20px;background:white;">
                 <h1 style="text-align:center;font-size:24px;margin-bottom:20px;">📋 Relatório de Funcionários</h1>
                 <p style="text-align:center;color:#666;">Gerado em ${new Date().toLocaleString('pt-BR')}</p>
                 <p style="text-align:center;color:#666;">Total: ${data.length} funcionários</p>
@@ -1632,37 +1643,54 @@
             
             const div = document.getElementById('relatorioPDF');
             div.innerHTML = html;
-            div.classList.add('ativo');
             
-            // Aguarda renderização
-            await new Promise(r => setTimeout(r, 400));
-            
-            const opt = { 
-                margin: 10, 
-                filename: `${prefixoArquivo}_${new Date().toISOString().split('T')[0]}.pdf`, 
-                image: { type: 'jpeg', quality: 0.95 }, 
-                html2canvas: { 
-                    scale: 2,
-                    useCORS: true,
-                    allowTaint: true,
-                    logging: false,
-                    backgroundColor: '#ffffff',
-                    scrollX: 0,
-                    scrollY: 0,
-                    windowWidth: document.documentElement.scrollWidth,
-                    windowHeight: document.documentElement.scrollHeight
-                }, 
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
-                pagebreak: { mode: ['css', 'legacy'] }
-            };
+            await new Promise(r => setTimeout(r, 300));
             
             try {
-                await html2pdf().set(opt).from(div).save();
+                const canvas = await html2canvas(div, {
+                    scale: 2,
+                    useCORS: true,
+                    allowTaint: false,
+                    logging: false,
+                    backgroundColor: '#ffffff',
+                    width: div.scrollWidth,
+                    height: div.scrollHeight,
+                    windowWidth: div.scrollWidth,
+                    windowHeight: div.scrollHeight
+                });
+                
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF({
+                    unit: 'mm',
+                    format: 'a4',
+                    orientation: 'landscape'
+                });
+                
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = pdf.internal.pageSize.getHeight();
+                const imgWidth = pdfWidth - 20;
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                
+                let heightLeft = imgHeight;
+                let position = 10;
+                
+                const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                
+                pdf.addImage(imgData, 'JPEG', 10, position, imgWidth, imgHeight);
+                heightLeft -= (pdfHeight - 20);
+                
+                while (heightLeft > 0) {
+                    position = heightLeft - imgHeight + 10;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'JPEG', 10, position, imgWidth, imgHeight);
+                    heightLeft -= (pdfHeight - 20);
+                }
+                
+                pdf.save(`${prefixoArquivo}_${new Date().toISOString().split('T')[0]}.pdf`);
             } catch (err) {
                 console.error('Erro ao gerar PDF:', err);
                 alert('❌ Erro ao gerar PDF: ' + err.message);
             } finally {
-                div.classList.remove('ativo');
                 div.innerHTML = '';
             }
         }
