@@ -4,6 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Cadastro de Funcionários - Santa Branca</title>
+    
+    <!-- PWA - Android -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#2563eb">
+    
+    <!-- PWA - iOS -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Funcionários">
+    <link rel="apple-touch-icon" href="/icon-192.png">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
@@ -1805,6 +1816,23 @@
         }
 
         document.addEventListener('DOMContentLoaded', init);
+    </script>
+
+    <!-- PWA - Registro do Service Worker -->
+    <script>
+        // Registra o Service Worker (necessário para PWA)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(() => console.log('✅ PWA: Service Worker registrado'))
+                    .catch(err => console.error('❌ PWA: Erro ao registrar Service Worker', err));
+            });
+        }
+
+        // Detecta se o app foi instalado
+        window.addEventListener('appinstalled', () => {
+            console.log('✅ PWA: App instalado com sucesso!');
+        });
     </script>
 </body>
 </html>
