@@ -14,6 +14,19 @@
         .stat-card:hover { transform: translateY(-5px); }
         @media print { .no-print { display: none; } .print-only { display: block; } }
         .print-only { display: none; }
+        .ficha-pdf { font-family: 'Segoe UI', Arial, sans-serif; color: #222; }
+        .ficha-pdf h1 { text-align: center; color: #1e40af; font-size: 22px; margin: 0 0 4px 0; }
+        .ficha-pdf h2 { text-align: center; color: #555; font-size: 14px; font-weight: normal; margin: 0 0 20px 0; }
+        .ficha-pdf .topo { display: flex; align-items: center; gap: 24px; border-bottom: 2px solid #1e40af; padding-bottom: 16px; margin-bottom: 16px; }
+        .ficha-pdf .foto { width: 130px; height: 130px; object-fit: cover; border-radius: 50%; border: 3px solid #1e40af; }
+        .ficha-pdf .foto-vazia { width: 130px; height: 130px; border-radius: 50%; background: #e5e7eb; display: flex; align-items: center; justify-content: center; color: #9ca3af; font-size: 12px; text-align: center; border: 3px solid #1e40af; }
+        .ficha-pdf .secao { margin-top: 16px; }
+        .ficha-pdf .secao-titulo { background: #1e40af; color: white; padding: 6px 12px; font-size: 13px; font-weight: bold; border-radius: 4px; margin-bottom: 8px; }
+        .ficha-pdf table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .ficha-pdf td { padding: 6px 8px; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
+        .ficha-pdf td strong { color: #1e40af; }
+        .ficha-pdf .doc-item { display: flex; justify-content: space-between; padding: 6px 8px; border-bottom: 1px dashed #ccc; font-size: 12px; }
+        .ficha-pdf .rodape { margin-top: 24px; text-align: center; font-size: 10px; color: #888; border-top: 1px solid #ddd; padding-top: 8px; }
     </style>
 </head>
 <body class="bg-gray-100 p-8">
@@ -137,7 +150,6 @@
                         </div>
                     </div>
                     
-                    <!-- SEÇÃO DE DOCUMENTOS NO CADASTRO -->
                     <div class="md:col-span-2 border-t pt-4">
                         <label class="block text-lg font-semibold mb-3">📄 Documentos do Funcionário</label>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
@@ -190,9 +202,18 @@
                     <button id="btnBuscarFunc" class="bg-blue-500 text-white px-6 py-2 rounded">🔍 BUSCAR</button>
                     <button id="btnCarregarTodos" class="bg-green-500 text-white px-6 py-2 rounded">📋 CARREGAR TODOS</button>
                     <button id="btnLimparBuscaFunc" class="bg-gray-500 text-white px-6 py-2 rounded">🧹 LIMPAR</button>
+                    <button id="btnExportarResultadoExcel" class="bg-emerald-600 text-white px-6 py-2 rounded hover:bg-emerald-700">📊 Excel do Resultado</button>
+                    <button id="btnExportarResultadoPDF" class="bg-orange-600 text-white px-6 py-2 rounded hover:bg-orange-700">📄 PDF do Resultado</button>
                 </div>
                 <div class="flex justify-between items-center mb-4"><h3 class="text-lg font-semibold">📊 Resultados</h3><span id="totalResultados" class="text-sm text-gray-600">0 funcionário(s)</span></div>
                 <div id="listaFuncionarios" class="space-y-4"></div>
+                <div id="loadingScroll" class="hidden text-center py-6 text-gray-500">
+                    <span class="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></span>
+                    <p class="mt-2 text-sm">Carregando mais funcionários...</p>
+                </div>
+                <div id="fimLista" class="hidden text-center py-6 text-gray-400 text-sm">
+                    ✅ Todos os funcionários foram carregados.
+                </div>
             </div>
         </div>
 
@@ -200,8 +221,20 @@
         <div id="abaUsuarios" style="display: none;">
             <div class="bg-white rounded-lg shadow p-6">
                 <div class="flex justify-between items-center mb-4"><h2 class="text-xl font-semibold">👥 Gerenciar Usuários Autorizados</h2></div>
-                <div class="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200"><h3 class="text-md font-semibold text-blue-800 mb-2">📝 Como adicionar um novo usuário:</h3><ol class="text-sm text-blue-700 list-decimal list-inside space-y-1"><li>Acesse o Supabase Dashboard → Authentication → Users</li><li>Clique em "Add User" e crie o usuário com email e senha</li><li>Volte aqui e clique em "Adicionar à Lista" abaixo</li></ol></div>
-                <div class="mb-6"><h3 class="text-lg font-semibold mb-2">Adicionar Usuário à Lista de Autorizados</h3><div class="flex gap-2 flex-wrap"><input type="email" id="novoUsuarioEmail" placeholder="E-mail do usuário" class="flex-1 border p-2 rounded"><input type="text" id="novoUsuarioNome" placeholder="Nome do usuário" class="flex-1 border p-2 rounded"><button id="btnAdicionarUsuario" class="bg-green-500 text-white px-4 py-2 rounded">Adicionar</button></div><p class="text-xs text-gray-500 mt-2">⚠️ O usuário já deve ter sido criado no Supabase Auth</p></div>
+                <div class="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200"><h3 class="text-md font-semibold text-blue-800 mb-2">📝 Como adicionar um novo usuário:</h3><ol class="text-sm text-blue-700 list-decimal list-inside space-y-1"><li>Acesse o Supabase Dashboard → Authentication → Users</li><li>Clique em "Add User" e crie o usuário com email e senha</li><li>Volte aqui e clique em "Adicionar" abaixo, marcando se é admin ou não</li></ol></div>
+                <div class="mb-6">
+                    <h3 class="text-lg font-semibold mb-2">Adicionar Usuário à Lista de Autorizados</h3>
+                    <div class="flex gap-2 flex-wrap items-center">
+                        <input type="email" id="novoUsuarioEmail" placeholder="E-mail do usuário" class="flex-1 border p-2 rounded min-w-[220px]">
+                        <input type="text" id="novoUsuarioNome" placeholder="Nome do usuário" class="flex-1 border p-2 rounded min-w-[220px]">
+                        <label class="flex items-center gap-2 text-sm bg-yellow-50 border border-yellow-300 px-3 py-2 rounded cursor-pointer">
+                            <input type="checkbox" id="novoUsuarioIsAdmin" class="w-4 h-4">
+                            <span>🔑 Administrador</span>
+                        </label>
+                        <button id="btnAdicionarUsuario" class="bg-green-500 text-white px-4 py-2 rounded">Adicionar</button>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-2">⚠️ O usuário já deve ter sido criado no Supabase Auth</p>
+                </div>
                 <div><h3 class="text-lg font-semibold mb-2">Usuários Autorizados</h3><div id="listaUsuarios"></div></div>
             </div>
         </div>
@@ -235,7 +268,10 @@
         <div class="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[85vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-4 border-b pb-3">
                 <h3 class="text-xl font-bold">📋 Detalhes do Funcionário</h3>
-                <button onclick="fecharModal()" class="text-gray-500 text-2xl hover:text-gray-700">&times;</button>
+                <div class="flex gap-2 items-center">
+                    <button id="btnImprimirFicha" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 text-sm">🖨️ Imprimir Ficha</button>
+                    <button onclick="fecharModal()" class="text-gray-500 text-2xl hover:text-gray-700">&times;</button>
+                </div>
             </div>
             <div id="conteudoModal" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
         </div>
@@ -274,7 +310,6 @@
                     </div>
                 </div>
                 
-                <!-- SEÇÃO DE DOCUMENTOS NA EDIÇÃO -->
                 <div class="md:col-span-2 border-t pt-4">
                     <label class="block text-lg font-semibold mb-3">📄 Documentos do Funcionário</label>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
@@ -316,6 +351,7 @@
     </div>
 
     <div class="print-only" id="relatorioPDF"></div>
+    <div class="print-only" id="fichaIndividualPDF"></div>
 
     <script>
         const SUPABASE_URL = 'https://ndvgduxdebeiyujfrups.supabase.co';
@@ -328,6 +364,18 @@
         let graficoCargos = null;
         let documentosTemp = [];
         let editArquivoSelecionado = null;
+
+        // ============================================
+        // SCROLL INFINITO - VARIÁVEIS DE ESTADO
+        // ============================================
+        const PAGE_SIZE = 20;
+        let funcionariosCarregados = [];
+        let offsetAtual = 0;
+        let carregandoMais = false;
+        let temMaisFuncionarios = true;
+        let filtrosAtivos = { nome: '', unidade: '', funcao: '', email: '' };
+        let observerScroll = null;
+        let nomeFuncionarioAberto = null; // guarda o nome do funcionário aberto no modal
 
         // ============================================
         // FUNÇÕES AUXILIARES
@@ -343,6 +391,16 @@
             if (!dataISO) return '-';
             const data = new Date(dataISO);
             return data.toLocaleString('pt-BR');
+        }
+
+        function escaparHtml(texto) {
+            if (texto === null || texto === undefined) return '';
+            return String(texto)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
         }
 
         async function registrarAuditoria(acao, nomeFuncionario, dadosAntigos = null, dadosNovos = null) {
@@ -371,10 +429,7 @@
                 
                 const { data, error } = await supabaseSistema.storage
                     .from('documentos_funcionarios')
-                    .upload(nomeArquivo, arquivo, {
-                        cacheControl: '3600',
-                        upsert: false
-                    });
+                    .upload(nomeArquivo, arquivo, { cacheControl: '3600', upsert: false });
                 
                 if (error) throw error;
                 
@@ -394,31 +449,6 @@
             }
         }
 
-        async function salvarDocumento(cadastroNome, tipoDocumento, descricao, arquivo) {
-            try {
-                const dadosUpload = await uploadDocumento(arquivo, cadastroNome, tipoDocumento);
-                
-                const { data, error } = await supabaseSistema
-                    .from('tblDocumentos')
-                    .insert([{
-                        cadastro_nome: cadastroNome,
-                        tipo_documento: tipoDocumento,
-                        descricao: descricao,
-                        nome_arquivo: dadosUpload.nome_arquivo,
-                        url_arquivo: dadosUpload.url,
-                        tamanho_arquivo: dadosUpload.tamanho,
-                        tipo_arquivo: dadosUpload.tipo_arquivo
-                    }])
-                    .select();
-                
-                if (error) throw error;
-                return data[0];
-            } catch (error) {
-                console.error('Erro ao salvar documento:', error);
-                throw error;
-            }
-        }
-
         async function carregarDocumentos(nomeFuncionario) {
             try {
                 const { data, error } = await supabaseSistema
@@ -426,7 +456,6 @@
                     .select('*')
                     .eq('cadastro_nome', nomeFuncionario)
                     .order('data_upload', { ascending: false });
-                
                 if (error) throw error;
                 return data || [];
             } catch (error) {
@@ -441,7 +470,6 @@
                     .from('tblDocumentos')
                     .delete()
                     .eq('id', documentoId);
-                
                 if (error) throw error;
                 return true;
             } catch (error) {
@@ -451,16 +479,14 @@
         }
 
         // ============================================
-        // FUNÇÕES DE DOCUMENTOS - CADASTRO
+        // DOCUMENTOS - CADASTRO
         // ============================================
         function atualizarListaDocumentosCadastro() {
             const listaDiv = document.getElementById('listaDocumentosCadastro');
-            
             if (documentosTemp.length === 0) {
                 listaDiv.innerHTML = '<p class="text-gray-400 text-sm">Nenhum documento adicionado. Os documentos serão salvos após o cadastro.</p>';
                 return;
             }
-            
             let html = '';
             documentosTemp.forEach((doc, index) => {
                 html += `
@@ -468,15 +494,14 @@
                         <div class="flex items-center gap-2">
                             <span class="text-xl">📄</span>
                             <div>
-                                <p class="font-semibold">${doc.tipo_documento}</p>
-                                <p class="text-sm text-gray-600">${doc.descricao || doc.nome_arquivo}</p>
+                                <p class="font-semibold">${escaparHtml(doc.tipo_documento)}</p>
+                                <p class="text-sm text-gray-600">${escaparHtml(doc.descricao || doc.nome_arquivo)}</p>
                             </div>
                         </div>
                         <button onclick="removerDocumentoTemp(${index})" class="bg-red-500 text-white px-3 py-1 rounded text-sm">🗑️ Remover</button>
                     </div>
                 `;
             });
-            
             listaDiv.innerHTML = html;
         }
 
@@ -485,7 +510,6 @@
             atualizarListaDocumentosCadastro();
         };
 
-        // Botão para adicionar documento no cadastro
         document.getElementById('btnAdicionarDocumentoCadastro').onclick = async () => {
             const tipoDocumento = document.getElementById('tipoDocumentoCadastro').value;
             const descricao = document.getElementById('descricaoDocumentoCadastro').value;
@@ -498,7 +522,6 @@
             
             try {
                 const dadosUpload = await uploadDocumento(arquivo, nomeFuncionario, tipoDocumento);
-                
                 documentosTemp.push({
                     tipo_documento: tipoDocumento,
                     descricao: descricao,
@@ -507,13 +530,10 @@
                     tamanho_arquivo: dadosUpload.tamanho,
                     tipo_arquivo: dadosUpload.tipo_arquivo
                 });
-                
                 atualizarListaDocumentosCadastro();
-                
                 document.getElementById('tipoDocumentoCadastro').value = '';
                 document.getElementById('descricaoDocumentoCadastro').value = '';
                 document.getElementById('arquivoDocumentoCadastro').value = '';
-                
                 alert('✅ Documento adicionado! Será salvo junto com o cadastro.');
             } catch (error) {
                 alert('❌ Erro ao adicionar documento: ' + error.message);
@@ -521,25 +541,20 @@
         };
 
         // ============================================
-        // FUNÇÕES DE DOCUMENTOS - EDIÇÃO
+        // DOCUMENTOS - EDIÇÃO
         // ============================================
         async function atualizarListaDocumentosEdicao(nomeFuncionario) {
             const listaDiv = document.getElementById('listaDocumentosEdicao');
-            
             if (!nomeFuncionario) {
                 listaDiv.innerHTML = '<p class="text-gray-400 text-sm">Nome do funcionário não informado.</p>';
                 return;
             }
-            
             listaDiv.innerHTML = '<p class="text-gray-400 text-sm">Carregando documentos...</p>';
-            
             const documentos = await carregarDocumentos(nomeFuncionario);
-            
             if (documentos.length === 0) {
                 listaDiv.innerHTML = '<p class="text-gray-400 text-sm">Nenhum documento cadastrado.</p>';
                 return;
             }
-            
             let html = '';
             documentos.forEach(doc => {
                 const dataUpload = new Date(doc.data_upload).toLocaleDateString('pt-BR');
@@ -549,8 +564,8 @@
                             <div class="flex items-center gap-2">
                                 <span class="text-2xl">📄</span>
                                 <div>
-                                    <p class="font-semibold">${doc.tipo_documento}</p>
-                                    <p class="text-sm text-gray-600">${doc.descricao || doc.nome_arquivo}</p>
+                                    <p class="font-semibold">${escaparHtml(doc.tipo_documento)}</p>
+                                    <p class="text-sm text-gray-600">${escaparHtml(doc.descricao || doc.nome_arquivo)}</p>
                                     <p class="text-xs text-gray-400">Enviado em: ${dataUpload}</p>
                                 </div>
                             </div>
@@ -562,15 +577,12 @@
                     </div>
                 `;
             });
-            
             listaDiv.innerHTML = html;
         }
 
         window.excluirDocumentoEdicao = async function(documentoId, nomeFuncionario) {
             if (!confirm('Tem certeza que deseja excluir este documento?')) return;
-            
             const sucesso = await excluirDocumento(documentoId);
-            
             if (sucesso) {
                 alert('✅ Documento excluído com sucesso!');
                 await atualizarListaDocumentosEdicao(nomeFuncionario);
@@ -579,7 +591,6 @@
             }
         };
 
-        // Botão para adicionar documento na edição
         document.getElementById('btnAdicionarDocumentoEdicao').onclick = async () => {
             const tipoDocumento = document.getElementById('tipoDocumentoEdicao').value;
             const descricao = document.getElementById('descricaoDocumentoEdicao').value;
@@ -592,7 +603,6 @@
             
             try {
                 const dadosUpload = await uploadDocumento(arquivo, nomeFuncionario, tipoDocumento);
-                
                 const { error } = await supabaseSistema
                     .from('tblDocumentos')
                     .insert([{
@@ -604,13 +614,10 @@
                         tamanho_arquivo: dadosUpload.tamanho,
                         tipo_arquivo: dadosUpload.tipo_arquivo
                     }]);
-                
                 if (error) throw error;
-                
                 document.getElementById('tipoDocumentoEdicao').value = '';
                 document.getElementById('descricaoDocumentoEdicao').value = '';
                 document.getElementById('arquivoDocumentoEdicao').value = '';
-                
                 alert('✅ Documento adicionado com sucesso!');
                 await atualizarListaDocumentosEdicao(nomeFuncionario);
             } catch (error) {
@@ -624,25 +631,23 @@
         function fecharModal() {
             document.getElementById('modalDetalhes').classList.add('hidden');
             document.getElementById('modalDetalhes').classList.remove('flex');
+            nomeFuncionarioAberto = null;
         }
-
         function fecharModalEdicao() {
             document.getElementById('modalEdicao').classList.add('hidden');
             document.getElementById('modalEdicao').classList.remove('flex');
         }
-
         function fecharModalLaudo() {
             document.getElementById('modalLaudo').classList.add('hidden');
             document.getElementById('modalLaudo').classList.remove('flex');
         }
 
         // ============================================
-        // FUNÇÃO PARA LISTAR FUNCIONÁRIOS COM LAUDO
+        // LISTAR FUNCIONÁRIOS COM LAUDO
         // ============================================
         async function listarFuncionariosComLaudo() {
             const modal = document.getElementById('modalLaudo');
             const listaDiv = document.getElementById('listaLaudo');
-            
             modal.classList.remove('hidden');
             modal.classList.add('flex');
             listaDiv.innerHTML = '<div class="text-center py-4">⏳ Carregando funcionários...</div>';
@@ -653,22 +658,17 @@
                     .select('*')
                     .eq('"Laudo de Restrição"', 'Sim')
                     .order('"Nome Completo"');
-                
                 if (error) throw error;
-                
                 if (!data || data.length === 0) {
                     listaDiv.innerHTML = '<div class="text-center py-8"><p class="text-green-600 text-lg">✅ Nenhum funcionário com laudo de restrição cadastrado.</p></div>';
                     return;
                 }
-                
                 let html = `<div class="mb-3 p-2 bg-red-100 rounded-lg text-center font-bold text-red-700">📊 TOTAL: ${data.length} funcionário(s) com laudo de restrição</div>`;
                 html += '<p class="text-xs text-gray-500 text-center mb-3">👆 Clique no funcionário para ver a ficha completa com documentos</p>';
                 html += '<div class="space-y-3">';
-                
                 data.forEach((func, index) => {
                     const nomeEsc = (func['Nome Completo'] || '').replace(/'/g, "\\'");
                     const fotoUrl = func['Foto (link da foto)'];
-                    
                     html += `
                         <div onclick="abrirFichaDoLaudo('${nomeEsc}')" 
                              class="border rounded-lg p-4 hover:bg-red-50 hover:border-red-400 transition cursor-pointer group">
@@ -680,12 +680,12 @@
                                 }
                                 <div class="flex-1">
                                     <div class="font-bold text-gray-800 text-lg group-hover:text-red-700 flex items-center gap-2">
-                                        ${func['Nome Completo'] || '-'}
+                                        ${escaparHtml(func['Nome Completo']) || '-'}
                                         <span class="text-xs bg-red-500 text-white px-2 py-1 rounded-full opacity-0 group-hover:opacity-100 transition">👁️ Ver ficha</span>
                                     </div>
-                                    <div class="text-sm text-gray-600 mt-1">📌 ${func['Função'] || 'Função não informada'}</div>
-                                    <div class="text-sm text-gray-600">🏫 ${func['Unidade Escolar'] || 'Unidade não informada'}</div>
-                                    <div class="text-xs text-gray-500 mt-1">📧 ${func['E-mail'] || 'E-mail não informado'} | 📱 ${func['Telefone para Contato'] || 'Telefone não informado'}</div>
+                                    <div class="text-sm text-gray-600 mt-1">📌 ${escaparHtml(func['Função']) || 'Função não informada'}</div>
+                                    <div class="text-sm text-gray-600">🏫 ${escaparHtml(func['Unidade Escolar']) || 'Unidade não informada'}</div>
+                                    <div class="text-xs text-gray-500 mt-1">📧 ${escaparHtml(func['E-mail']) || 'E-mail não informado'} | 📱 ${escaparHtml(func['Telefone para Contato']) || 'Telefone não informado'}</div>
                                 </div>
                             </div>
                         </div>
@@ -699,7 +699,6 @@
             }
         }
 
-        // Função auxiliar para abrir a ficha do funcionário a partir do modal de laudo
         window.abrirFichaDoLaudo = async function(nome) {
             fecharModalLaudo();
             await verDetalhes(nome);
@@ -748,7 +747,7 @@
             } else if (aba === 'busca') {
                 abaBusca.style.display = 'block';
                 btnBusca.className = btnClassActive;
-                carregarTodosFuncionarios();
+                resetarScrollERecarregar();
             } else if (aba === 'usuarios') {
                 abaUsuarios.style.display = 'block';
                 btnUsuarios.className = btnClassActive;
@@ -768,7 +767,7 @@
         btnAuditoria.onclick = () => setAba('auditoria');
 
         // ============================================
-        // AUTENTICAÇÃO
+        // AUTENTICAÇÃO (admins dinâmicos)
         // ============================================
         async function verificarAuth() {
             const { data: { session } } = await supabaseSistema.auth.getSession();
@@ -776,7 +775,25 @@
             emailLogado = session.user.email;
             document.getElementById('nomeUsuario').innerHTML = emailLogado;
             
-            isAdmin = emailLogado === 'profcesarcamargo@gmail.com';
+            // Busca na tabela usuarios_autorizados se este usuário é admin
+            try {
+                const { data, error } = await supabaseSistema
+                    .from('usuarios_autorizados')
+                    .select('is_admin, nome')
+                    .eq('email', emailLogado)
+                    .maybeSingle();
+                
+                if (error) {
+                    console.error('Erro ao verificar admin:', error);
+                    isAdmin = false;
+                } else {
+                    isAdmin = data?.is_admin === true;
+                }
+            } catch (err) {
+                console.error('Erro inesperado ao verificar admin:', err);
+                isAdmin = false;
+            }
+            
             if (isAdmin) {
                 document.getElementById('statusAdmin').innerHTML = '🔑 Administrador';
                 btnUsuarios.style.display = 'inline-block';
@@ -819,13 +836,11 @@
             }).length;
             document.getElementById('totalAtivos').innerHTML = ativos;
             
-            // Gráfico Unidades
             const unidades = {};
             data.forEach(f => {
                 const unidade = f['Unidade Escolar'] || 'Não informada';
                 unidades[unidade] = (unidades[unidade] || 0) + 1;
             });
-            
             const labelsUnidades = Object.keys(unidades);
             const dadosUnidades = Object.values(unidades);
             
@@ -837,13 +852,11 @@
                 options: { responsive: true, maintainAspectRatio: true }
             });
             
-            // Gráfico Cargos
             const cargos = {};
             data.forEach(f => {
                 const cargo = f['Cargo/Situação'] || 'Não informado';
                 cargos[cargo] = (cargos[cargo] || 0) + 1;
             });
-            
             const labelsCargos = Object.keys(cargos);
             const dadosCargos = Object.values(cargos);
             
@@ -855,7 +868,6 @@
                 options: { responsive: true, maintainAspectRatio: true }
             });
             
-            // Aniversariantes
             const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
             const mesAtual = new Date().getMonth();
             document.getElementById('mesAtual').innerHTML = meses[mesAtual];
@@ -874,7 +886,7 @@
                     const diaAniversario = parseInt(f['Data de Nascimento'].split('-')[2]);
                     const diaHoje = hoje.getDate();
                     const destaque = diaAniversario === diaHoje ? 'bg-green-100 border-green-400' : 'bg-pink-50';
-                    html += `<div class="${destaque} p-3 rounded-lg flex justify-between items-center"><div><span class="font-semibold">${f['Nome Completo']}</span><br><span class="text-sm text-gray-600">${f['Função'] || '-'}</span></div><div class="text-right"><span class="text-lg">🎂</span><br><span class="text-sm font-bold">${dataNasc}</span></div></div>`;
+                    html += `<div class="${destaque} p-3 rounded-lg flex justify-between items-center"><div><span class="font-semibold">${escaparHtml(f['Nome Completo'])}</span><br><span class="text-sm text-gray-600">${escaparHtml(f['Função']) || '-'}</span></div><div class="text-right"><span class="text-lg">🎂</span><br><span class="text-sm font-bold">${dataNasc}</span></div></div>`;
                 });
                 html += '</div>';
                 document.getElementById('listaAniversariantes').innerHTML = html;
@@ -897,68 +909,130 @@
         }
 
         // ============================================
-        // FUNÇÕES DE BUSCA E EXIBIÇÃO
+        // SCROLL INFINITO — CONTROLE
         // ============================================
-        async function carregarTodosFuncionarios() {
-            const { data, error } = await supabaseSistema.from('tblCadastro').select('*').order('"Nome Completo"');
-            if (error) { alert('Erro: ' + error.message); return; }
-            document.getElementById('totalResultados').innerHTML = data.length + ' funcionário(s)';
-            if (data.length === 0) { document.getElementById('listaFuncionarios').innerHTML = '<p class="text-center text-gray-500 py-8">Nenhum funcionário cadastrado</p>'; return; }
+        function aplicarFiltrosQuery(query) {
+            if (filtrosAtivos.nome) query = query.ilike('"Nome Completo"', `%${filtrosAtivos.nome}%`);
+            if (filtrosAtivos.unidade) query = query.ilike('"Unidade Escolar"', `%${filtrosAtivos.unidade}%`);
+            if (filtrosAtivos.funcao) query = query.ilike('"Função"', `%${filtrosAtivos.funcao}%`);
+            if (filtrosAtivos.email) query = query.ilike('"E-mail"', `%${filtrosAtivos.email}%`);
+            return query;
+        }
+
+        function resetarScrollERecarregar() {
+            funcionariosCarregados = [];
+            offsetAtual = 0;
+            temMaisFuncionarios = true;
+            document.getElementById('listaFuncionarios').innerHTML = '';
+            document.getElementById('fimLista').classList.add('hidden');
+            document.getElementById('totalResultados').innerHTML = '0 funcionário(s)';
+            carregarMaisFuncionarios();
+        }
+
+        async function carregarMaisFuncionarios() {
+            if (carregandoMais || !temMaisFuncionarios) return;
+            carregandoMais = true;
             
-            let html = '';
-            for (const f of data) {
-                const nomeEsc = (f['Nome Completo'] || '').replace(/'/g, "\\'");
-                const fotoUrl = f['Foto (link da foto)'];
-                const dataNascimento = formatarData(f['Data de Nascimento']);
+            const loading = document.getElementById('loadingScroll');
+            loading.classList.remove('hidden');
+            
+            try {
+                let query = supabaseSistema
+                    .from('tblCadastro')
+                    .select('*', { count: 'exact' });
+                query = aplicarFiltrosQuery(query);
+                query = query.order('"Nome Completo"').range(offsetAtual, offsetAtual + PAGE_SIZE - 1);
                 
-                // Botão Excluir só aparece para administradores
-                const btnExcluir = isAdmin 
-                    ? `<button onclick='excluirFuncionario("${nomeEsc}")' class="bg-red-500 text-white px-3 py-1 rounded">Excluir</button>` 
-                    : '';
+                const { data, error, count } = await query;
+                if (error) throw error;
                 
-                html += `<div class="border rounded-lg p-4 hover:shadow"><div class="flex justify-between items-start"><div class="flex gap-4">${fotoUrl ? `<img src="${fotoUrl}" class="h-16 w-16 object-cover rounded-full" onerror="this.style.display='none'">` : '<div class="h-16 w-16 bg-gray-200 rounded-full flex items-center justify-center"><span class="text-gray-400">📸</span></div>'}<div><h3 class="font-bold text-lg">${f['Nome Completo'] || '-'}</h3><p class="text-gray-600">${f['Função'] || '-'} | ${f['Unidade Escolar'] || '-'}</p><p class="text-sm text-gray-500">📧 ${f['E-mail'] || '-'} | 📱 ${f['Telefone para Contato'] || '-'} | 🎂 ${dataNascimento}</p></div></div><div class="flex gap-2 flex-wrap"><button onclick='verDetalhes("${nomeEsc}")' class="bg-blue-500 text-white px-3 py-1 rounded">Ver</button><button onclick='abrirEdicao("${nomeEsc}")' class="bg-yellow-500 text-white px-3 py-1 rounded">✏️ Editar</button>${btnExcluir}</div></div></div>`;
+                const novos = data || [];
+                funcionariosCarregados = funcionariosCarregados.concat(novos);
+                offsetAtual += novos.length;
+                
+                renderizarFuncionarios();
+                
+                document.getElementById('totalResultados').innerHTML = `${funcionariosCarregados.length} de ${count || funcionariosCarregados.length} funcionário(s)`;
+                
+                if (novos.length < PAGE_SIZE) {
+                    temMaisFuncionarios = false;
+                    document.getElementById('fimLista').classList.remove('hidden');
+                } else {
+                    document.getElementById('fimLista').classList.add('hidden');
+                }
+            } catch (err) {
+                console.error('Erro ao carregar funcionários:', err);
+                alert('❌ Erro ao carregar funcionários: ' + err.message);
+            } finally {
+                carregandoMais = false;
+                loading.classList.add('hidden');
+                configurarObserverScroll();
             }
-            document.getElementById('listaFuncionarios').innerHTML = html;
         }
 
-        async function buscarComFiltros() {
-            let query = supabaseSistema.from('tblCadastro').select('*');
-            const nome = document.getElementById('buscaNome').value;
-            if (nome) query = query.ilike('"Nome Completo"', `%${nome}%`);
-            const unidade = document.getElementById('buscaUnidade').value;
-            if (unidade) query = query.ilike('"Unidade Escolar"', `%${unidade}%`);
-            const funcao = document.getElementById('buscaFuncao').value;
-            if (funcao) query = query.ilike('"Função"', `%${funcao}%`);
-            const email = document.getElementById('buscaEmail').value;
-            if (email) query = query.ilike('"E-mail"', `%${email}%`);
-            const { data, error } = await query.order('"Nome Completo"');
-            if (error) { alert('Erro: ' + error.message); return; }
-            document.getElementById('totalResultados').innerHTML = data.length + ' funcionário(s)';
-            if (data.length === 0) { document.getElementById('listaFuncionarios').innerHTML = '<p class="text-center text-gray-500 py-8">Nenhum funcionário encontrado</p>'; return; }
-            let html = '';
-            for (const f of data) {
-                const nomeEsc = (f['Nome Completo'] || '').replace(/'/g, "\\'");
-                const fotoUrl = f['Foto (link da foto)'];
-                const dataNascimento = formatarData(f['Data de Nascimento']);
-                
-                // Botão Excluir só aparece para administradores
-                const btnExcluir = isAdmin 
-                    ? `<button onclick='excluirFuncionario("${nomeEsc}")' class="bg-red-500 text-white px-3 py-1 rounded">Excluir</button>` 
-                    : '';
-                
-                html += `<div class="border rounded-lg p-4 hover:shadow"><div class="flex justify-between items-start"><div class="flex gap-4">${fotoUrl ? `<img src="${fotoUrl}" class="h-16 w-16 object-cover rounded-full" onerror="this.style.display='none'">` : '<div class="h-16 w-16 bg-gray-200 rounded-full flex items-center justify-center"><span class="text-gray-400">📸</span></div>'}<div><h3 class="font-bold text-lg">${f['Nome Completo'] || '-'}</h3><p class="text-gray-600">${f['Função'] || '-'} | ${f['Unidade Escolar'] || '-'}</p><p class="text-sm text-gray-500">📧 ${f['E-mail'] || '-'} | 📱 ${f['Telefone para Contato'] || '-'} | 🎂 ${dataNascimento}</p></div></div><div class="flex gap-2 flex-wrap"><button onclick='verDetalhes("${nomeEsc}")' class="bg-blue-500 text-white px-3 py-1 rounded">Ver</button><button onclick='abrirEdicao("${nomeEsc}")' class="bg-yellow-500 text-white px-3 py-1 rounded">✏️ Editar</button>${btnExcluir}</div></div></div>`;
-            }
-            document.getElementById('listaFuncionarios').innerHTML = html;
+        function montarCardFuncionario(f) {
+            const nomeEsc = (f['Nome Completo'] || '').replace(/'/g, "\\'");
+            const fotoUrl = f['Foto (link da foto)'];
+            const dataNascimento = formatarData(f['Data de Nascimento']);
+            
+            const btnExcluir = isAdmin 
+                ? `<button onclick='excluirFuncionario("${nomeEsc}")' class="bg-red-500 text-white px-3 py-1 rounded">Excluir</button>` 
+                : '';
+            
+            return `<div class="border rounded-lg p-4 hover:shadow"><div class="flex justify-between items-start"><div class="flex gap-4">${fotoUrl ? `<img src="${fotoUrl}" class="h-16 w-16 object-cover rounded-full" onerror="this.style.display='none'">` : '<div class="h-16 w-16 bg-gray-200 rounded-full flex items-center justify-center"><span class="text-gray-400">📸</span></div>'}<div><h3 class="font-bold text-lg">${escaparHtml(f['Nome Completo']) || '-'}</h3><p class="text-gray-600">${escaparHtml(f['Função']) || '-'} | ${escaparHtml(f['Unidade Escolar']) || '-'}</p><p class="text-sm text-gray-500">📧 ${escaparHtml(f['E-mail']) || '-'} | 📱 ${escaparHtml(f['Telefone para Contato']) || '-'} | 🎂 ${dataNascimento}</p></div></div><div class="flex gap-2 flex-wrap"><button onclick='verDetalhes("${nomeEsc}")' class="bg-blue-500 text-white px-3 py-1 rounded">Ver</button><button onclick='abrirEdicao("${nomeEsc}")' class="bg-yellow-500 text-white px-3 py-1 rounded">✏️ Editar</button>${btnExcluir}</div></div></div>`;
         }
 
-        document.getElementById('btnBuscarFunc').onclick = buscarComFiltros;
-        document.getElementById('btnCarregarTodos').onclick = carregarTodosFuncionarios;
-        document.getElementById('btnLimparBuscaFunc').onclick = () => {
+        function renderizarFuncionarios() {
+            const container = document.getElementById('listaFuncionarios');
+            if (funcionariosCarregados.length === 0) {
+                container.innerHTML = '<p class="text-center text-gray-500 py-8">Nenhum funcionário encontrado</p>';
+                return;
+            }
+            container.innerHTML = funcionariosCarregados.map(montarCardFuncionario).join('');
+        }
+
+        function configurarObserverScroll() {
+            if (observerScroll) observerScroll.disconnect();
+            const sentinela = document.getElementById('loadingScroll');
+            observerScroll = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting && temMaisFuncionarios && !carregandoMais) {
+                        carregarMaisFuncionarios();
+                    }
+                });
+            }, { rootMargin: '200px' });
+            observerScroll.observe(sentinela);
+        }
+
+        // ============================================
+        // BUSCA
+        // ============================================
+        document.getElementById('btnBuscarFunc').onclick = () => {
+            filtrosAtivos = {
+                nome: document.getElementById('buscaNome').value.trim(),
+                unidade: document.getElementById('buscaUnidade').value.trim(),
+                funcao: document.getElementById('buscaFuncao').value.trim(),
+                email: document.getElementById('buscaEmail').value.trim()
+            };
+            resetarScrollERecarregar();
+        };
+
+        document.getElementById('btnCarregarTodos').onclick = () => {
+            filtrosAtivos = { nome: '', unidade: '', funcao: '', email: '' };
             document.getElementById('buscaNome').value = '';
             document.getElementById('buscaUnidade').value = '';
             document.getElementById('buscaFuncao').value = '';
             document.getElementById('buscaEmail').value = '';
-            carregarTodosFuncionarios();
+            resetarScrollERecarregar();
+        };
+
+        document.getElementById('btnLimparBuscaFunc').onclick = () => {
+            filtrosAtivos = { nome: '', unidade: '', funcao: '', email: '' };
+            document.getElementById('buscaNome').value = '';
+            document.getElementById('buscaUnidade').value = '';
+            document.getElementById('buscaFuncao').value = '';
+            document.getElementById('buscaEmail').value = '';
+            resetarScrollERecarregar();
         };
 
         // ============================================
@@ -968,6 +1042,7 @@
             const { data } = await supabaseSistema.from('tblCadastro').select('*').eq('"Nome Completo"', nome).single();
             if (!data) return;
             
+            nomeFuncionarioAberto = nome;
             const fotoUrl = data['Foto (link da foto)'];
             const dataNascimento = formatarData(data['Data de Nascimento']);
             const documentos = await carregarDocumentos(nome);
@@ -975,23 +1050,23 @@
             let html = `
                 <div class="md:col-span-1 flex flex-col items-center">
                     ${fotoUrl ? `<img src="${fotoUrl}" class="w-48 h-48 object-cover rounded-full border-4 border-blue-500 shadow-lg" onerror="this.src='https://via.placeholder.com/192?text=Sem+Foto'">` : `<div class="w-48 h-48 bg-gray-200 rounded-full flex items-center justify-center border-4 border-gray-300"><span class="text-gray-400 text-center">📸<br>Sem foto</span></div>`}
-                    <h3 class="text-xl font-bold mt-4 text-center">${data['Nome Completo'] || '-'}</h3>
-                    <p class="text-gray-600 text-center">${data['Função'] || '-'}</p>
+                    <h3 class="text-xl font-bold mt-4 text-center">${escaparHtml(data['Nome Completo']) || '-'}</h3>
+                    <p class="text-gray-600 text-center">${escaparHtml(data['Função']) || '-'}</p>
                 </div>
                 <div class="md:col-span-2">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div class="bg-gray-50 p-3 rounded"><strong>Unidade Escolar:</strong><br>${data['Unidade Escolar'] || '-'}</div>
-                        <div class="bg-gray-50 p-3 rounded"><strong>Matrícula:</strong><br>${data['Matrícula'] || '-'}</div>
-                        <div class="bg-gray-50 p-3 rounded"><strong>Endereço:</strong><br>${data['Endereço'] || '-'}</div>
-                        <div class="bg-gray-50 p-3 rounded"><strong>Telefone Contato:</strong><br>${data['Telefone para Contato'] || '-'}</div>
-                        <div class="bg-gray-50 p-3 rounded"><strong>Telefone Emergência:</strong><br>${data['Telefone para Emergências'] || '-'}</div>
+                        <div class="bg-gray-50 p-3 rounded"><strong>Unidade Escolar:</strong><br>${escaparHtml(data['Unidade Escolar']) || '-'}</div>
+                        <div class="bg-gray-50 p-3 rounded"><strong>Matrícula:</strong><br>${escaparHtml(data['Matrícula']) || '-'}</div>
+                        <div class="bg-gray-50 p-3 rounded"><strong>Endereço:</strong><br>${escaparHtml(data['Endereço']) || '-'}</div>
+                        <div class="bg-gray-50 p-3 rounded"><strong>Telefone Contato:</strong><br>${escaparHtml(data['Telefone para Contato']) || '-'}</div>
+                        <div class="bg-gray-50 p-3 rounded"><strong>Telefone Emergência:</strong><br>${escaparHtml(data['Telefone para Emergências']) || '-'}</div>
                         <div class="bg-gray-50 p-3 rounded"><strong>Data Nascimento:</strong><br>${dataNascimento}</div>
-                        <div class="bg-gray-50 p-3 rounded"><strong>Local Trabalho:</strong><br>${data['Local Atual de Trabalho e Função'] || '-'}</div>
-                        <div class="bg-gray-50 p-3 rounded"><strong>Cor/Raça:</strong><br>${data['Cor/Raça'] || '-'}</div>
-                        <div class="bg-gray-50 p-3 rounded"><strong>E-mail:</strong><br>${data['E-mail'] || '-'}</div>
-                        <div class="bg-gray-50 p-3 rounded"><strong>Laudo Restrição:</strong><br>${data['Laudo de Restrição'] || '-'}</div>
-                        <div class="bg-gray-50 p-3 rounded"><strong>Cargo/Situação:</strong><br>${data['Cargo/Situação'] || '-'}</div>
-                        <div class="bg-gray-50 p-3 rounded md:col-span-2"><strong>Observações:</strong><br>${data['Observações'] || '-'}</div>
+                        <div class="bg-gray-50 p-3 rounded"><strong>Local Trabalho:</strong><br>${escaparHtml(data['Local Atual de Trabalho e Função']) || '-'}</div>
+                        <div class="bg-gray-50 p-3 rounded"><strong>Cor/Raça:</strong><br>${escaparHtml(data['Cor/Raça']) || '-'}</div>
+                        <div class="bg-gray-50 p-3 rounded"><strong>E-mail:</strong><br>${escaparHtml(data['E-mail']) || '-'}</div>
+                        <div class="bg-gray-50 p-3 rounded"><strong>Laudo Restrição:</strong><br>${escaparHtml(data['Laudo de Restrição']) || '-'}</div>
+                        <div class="bg-gray-50 p-3 rounded"><strong>Cargo/Situação:</strong><br>${escaparHtml(data['Cargo/Situação']) || '-'}</div>
+                        <div class="bg-gray-50 p-3 rounded md:col-span-2"><strong>Observações:</strong><br>${escaparHtml(data['Observações']) || '-'}</div>
                     </div>
                     
                     <div class="mt-6 border-t pt-4">
@@ -1004,8 +1079,8 @@
                                         <div class="flex items-center gap-2">
                                             <span class="text-xl">📄</span>
                                             <div>
-                                                <p class="font-semibold">${doc.tipo_documento}</p>
-                                                <p class="text-sm text-gray-600">${doc.descricao || doc.nome_arquivo}</p>
+                                                <p class="font-semibold">${escaparHtml(doc.tipo_documento)}</p>
+                                                <p class="text-sm text-gray-600">${escaparHtml(doc.descricao || doc.nome_arquivo)}</p>
                                                 <p class="text-xs text-gray-400">Enviado em: ${dataUpload}</p>
                                             </div>
                                         </div>
@@ -1024,30 +1099,134 @@
         };
 
         // ============================================
+        // IMPRIMIR FICHA INDIVIDUAL (PDF)
+        // ============================================
+        document.getElementById('btnImprimirFicha').onclick = async () => {
+            if (!nomeFuncionarioAberto) { alert('Nenhum funcionário aberto!'); return; }
+            
+            const { data } = await supabaseSistema.from('tblCadastro').select('*').eq('"Nome Completo"', nomeFuncionarioAberto).single();
+            if (!data) { alert('Erro ao carregar dados do funcionário.'); return; }
+            
+            const documentos = await carregarDocumentos(nomeFuncionarioAberto);
+            const fotoUrl = data['Foto (link da foto)'];
+            const dataNascimento = formatarData(data['Data de Nascimento']);
+            const hoje = new Date().toLocaleString('pt-BR');
+            
+            const linha = (label, valor) => `<tr><td style="width:35%;"><strong>${label}</strong></td><td>${escaparHtml(valor) || '-'}</td></tr>`;
+            
+            let html = `
+                <div class="ficha-pdf">
+                    <h1>📋 FICHA DO FUNCIONÁRIO</h1>
+                    <h2>Secretaria Municipal de Santa Branca</h2>
+                    
+                    <div class="topo">
+                        ${fotoUrl 
+                            ? `<img src="${fotoUrl}" class="foto" crossorigin="anonymous">` 
+                            : `<div class="foto-vazia">Sem<br>foto</div>`}
+                        <div style="flex:1;">
+                            <h3 style="margin:0 0 8px 0;font-size:18px;color:#1e40af;">${escaparHtml(data['Nome Completo']) || '-'}</h3>
+                            <p style="margin:4px 0;font-size:13px;color:#555;"><strong>Função:</strong> ${escaparHtml(data['Função']) || '-'}</p>
+                            <p style="margin:4px 0;font-size:13px;color:#555;"><strong>Unidade:</strong> ${escaparHtml(data['Unidade Escolar']) || '-'}</p>
+                            <p style="margin:4px 0;font-size:13px;color:#555;"><strong>Matrícula:</strong> ${escaparHtml(data['Matrícula']) || '-'}</p>
+                            <p style="margin:4px 0;font-size:13px;color:#555;"><strong>Situação:</strong> ${escaparHtml(data['Cargo/Situação']) || '-'}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="secao">
+                        <div class="secao-titulo">📌 DADOS PESSOAIS</div>
+                        <table>
+                            ${linha('Data de Nascimento', dataNascimento)}
+                            ${linha('Cor/Raça', data['Cor/Raça'])}
+                            ${linha('E-mail', data['E-mail'])}
+                            ${linha('Endereço', data['Endereço'])}
+                        </table>
+                    </div>
+                    
+                    <div class="secao">
+                        <div class="secao-titulo">📞 CONTATOS</div>
+                        <table>
+                            ${linha('Telefone para Contato', data['Telefone para Contato'])}
+                            ${linha('Telefone para Emergências', data['Telefone para Emergências'])}
+                        </table>
+                    </div>
+                    
+                    <div class="secao">
+                        <div class="secao-titulo">💼 DADOS FUNCIONAIS</div>
+                        <table>
+                            ${linha('Local Atual de Trabalho', data['Local Atual de Trabalho e Função'])}
+                            ${linha('Cargo/Situação', data['Cargo/Situação'])}
+                            ${linha('Laudo de Restrição', data['Laudo de Restrição'])}
+                        </table>
+                    </div>
+                    
+                    <div class="secao">
+                        <div class="secao-titulo">📝 OBSERVAÇÕES</div>
+                        <div style="padding:8px;font-size:12px;border:1px solid #e5e7eb;border-radius:4px;min-height:40px;">${escaparHtml(data['Observações']) || 'Sem observações.'}</div>
+                    </div>
+                    
+                    <div class="secao">
+                        <div class="secao-titulo">📄 DOCUMENTOS ANEXADOS (${documentos.length})</div>
+                        ${documentos.length > 0 
+                            ? documentos.map(doc => `
+                                <div class="doc-item">
+                                    <span><strong>${escaparHtml(doc.tipo_documento)}</strong> — ${escaparHtml(doc.descricao || doc.nome_arquivo)}</span>
+                                    <span style="color:#888;font-size:10px;">${new Date(doc.data_upload).toLocaleDateString('pt-BR')}</span>
+                                </div>
+                            `).join('')
+                            : '<p style="font-size:12px;color:#888;padding:8px;">Nenhum documento anexado.</p>'}
+                    </div>
+                    
+                    <div class="rodape">
+                        Documento gerado em ${hoje} — Sistema de Cadastro de Funcionários
+                    </div>
+                </div>
+            `;
+            
+            const div = document.getElementById('fichaIndividualPDF');
+            div.innerHTML = html;
+            
+            const nomeArquivoSeguro = (data['Nome Completo'] || 'funcionario').replace(/[^a-z0-9]/gi, '_');
+            
+            const opt = {
+                margin: 10,
+                filename: `Ficha_${nomeArquivoSeguro}_${new Date().toISOString().split('T')[0]}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            
+            try {
+                await html2pdf().set(opt).from(div).save();
+            } catch (err) {
+                console.error('Erro ao gerar PDF:', err);
+                alert('❌ Erro ao gerar PDF. Se a foto não aparecer, pode ser bloqueio de CORS.');
+            } finally {
+                div.innerHTML = '';
+            }
+        };
+
+        // ============================================
         // EXCLUIR FUNCIONÁRIO (SOMENTE ADMIN)
         // ============================================
         window.excluirFuncionario = async function(nome) {
-            // Verificação de segurança: apenas admin pode excluir
             if (!isAdmin) {
                 alert('❌ Apenas administradores podem excluir funcionários!');
                 return;
             }
-            
             if (!confirm(`Tem certeza que deseja excluir "${nome}"? Esta ação não pode ser desfeita!`)) return;
             
             const { data: dadosAntigos } = await supabaseSistema.from('tblCadastro').select('*').eq('"Nome Completo"', nome).single();
-            
             const { error } = await supabaseSistema.from('tblCadastro').delete().eq('"Nome Completo"', nome);
             if (error) { alert('Erro: ' + error.message); return; }
             
             await registrarAuditoria('EXCLUSÃO', nome, dadosAntigos, null);
             alert('✅ Funcionário excluído com sucesso!');
-            carregarTodosFuncionarios();
+            resetarScrollERecarregar();
             carregarDashboard();
         };
 
         // ============================================
-        // EDIÇÃO DE FUNCIONÁRIO - ABRIR
+        // EDIÇÃO DE FUNCIONÁRIO
         // ============================================
         window.abrirEdicao = async function(nome) {
             const { data, error } = await supabaseSistema.from('tblCadastro').select('*').eq('"Nome Completo"', nome).single();
@@ -1088,9 +1267,6 @@
             document.getElementById('modalEdicao').classList.add('flex');
         };
 
-        // ============================================
-        // EDIÇÃO - UPLOAD DE FOTO
-        // ============================================
         document.getElementById('editUploadFoto').addEventListener('change', (e) => {
             editArquivoSelecionado = e.target.files[0];
             if (editArquivoSelecionado) {
@@ -1131,9 +1307,6 @@
             }
         });
 
-        // ============================================
-        // EDIÇÃO - SUBMIT
-        // ============================================
         document.getElementById('formEdicao').onsubmit = async (e) => {
             e.preventDefault();
             
@@ -1170,35 +1343,45 @@
             if (error) { alert('❌ Erro ao atualizar: ' + error.message); return; }
             
             if (nomeMudou) {
-                const { error: docError } = await supabaseSistema
+                await supabaseSistema
                     .from('tblDocumentos')
                     .update({ cadastro_nome: dadosNovos['Nome Completo'] })
                     .eq('cadastro_nome', nomeOriginal);
-                
-                if (docError) {
-                    console.error('Erro ao atualizar documentos:', docError);
-                }
             }
             
             await registrarAuditoria('EDIÇÃO', dadosNovos['Nome Completo'], dadosAntigos, dadosNovos);
             alert('✅ Funcionário atualizado com sucesso!');
             fecharModalEdicao();
-            carregarTodosFuncionarios();
+            resetarScrollERecarregar();
             carregarDashboard();
         };
 
         // ============================================
-        // USUÁRIOS
+        // USUÁRIOS (com is_admin)
         // ============================================
         async function carregarUsuarios() {
             const { data, error } = await supabaseSistema.from('usuarios_autorizados').select('*').order('nome');
             if (error) { console.error('Erro ao carregar usuários:', error); return; }
             const lista = document.getElementById('listaUsuarios');
-            if (data.length === 0) { lista.innerHTML = '<p class="text-gray-400">Nenhum usuário autorizado cadastrado.</p>'; return; }
+            if (!data || data.length === 0) { lista.innerHTML = '<p class="text-gray-400">Nenhum usuário autorizado cadastrado.</p>'; return; }
             let html = '<div class="space-y-2">';
             data.forEach(u => {
-                const isAdminUser = u.email === 'profcesarcamargo@gmail.com';
-                html += `<div class="border p-3 rounded flex justify-between items-center"><div><strong>${u.nome}</strong><br><span class="text-sm text-gray-600">${u.email}</span></div>${isAdminUser ? '<span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">🔑 Admin</span>' : `<button onclick="removerUsuario('${u.email}')" class="bg-red-500 text-white px-3 py-1 rounded text-sm">Remover</button>`}</div>`;
+                const badge = u.is_admin 
+                    ? '<span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">🔑 Admin</span>'
+                    : '<span class="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded">👤 Usuário</span>';
+                
+                const btnRemover = u.email === emailLogado
+                    ? '<span class="text-xs text-gray-400 italic">(você)</span>'
+                    : `<button onclick="removerUsuario('${u.email}')" class="bg-red-500 text-white px-3 py-1 rounded text-sm">Remover</button>`;
+                
+                const btnToggle = u.email === emailLogado
+                    ? ''
+                    : `<button onclick="toggleAdmin('${u.email}', ${u.is_admin})" class="bg-yellow-500 text-white px-3 py-1 rounded text-sm">${u.is_admin ? '⬇️ Rebaixar' : '⬆️ Promover'}</button>`;
+                
+                html += `<div class="border p-3 rounded flex justify-between items-center gap-2">
+                    <div class="flex-1"><strong>${escaparHtml(u.nome)}</strong><br><span class="text-sm text-gray-600">${escaparHtml(u.email)}</span></div>
+                    <div class="flex gap-2 items-center">${badge}${btnToggle}${btnRemover}</div>
+                </div>`;
             });
             html += '</div>';
             lista.innerHTML = html;
@@ -1207,13 +1390,16 @@
         document.getElementById('btnAdicionarUsuario').onclick = async () => {
             const email = document.getElementById('novoUsuarioEmail').value.trim();
             const nome = document.getElementById('novoUsuarioNome').value.trim();
+            const is_admin = document.getElementById('novoUsuarioIsAdmin').checked;
+            
             if (!email || !nome) { alert('Preencha email e nome!'); return; }
             
-            const { error } = await supabaseSistema.from('usuarios_autorizados').insert([{ email, nome }]);
+            const { error } = await supabaseSistema.from('usuarios_autorizados').insert([{ email, nome, is_admin }]);
             if (error) { alert('Erro: ' + error.message); return; }
             
             document.getElementById('novoUsuarioEmail').value = '';
             document.getElementById('novoUsuarioNome').value = '';
+            document.getElementById('novoUsuarioIsAdmin').checked = false;
             alert('✅ Usuário adicionado!');
             carregarUsuarios();
         };
@@ -1225,43 +1411,38 @@
             carregarUsuarios();
         };
 
-        // ============================================
-        // AUDITORIA (com filtro por ação E por usuário)
-        // ============================================
-        let usuariosHistoricoCarregados = false;
+        window.toggleAdmin = async function(email, isAdminAtual) {
+            const acao = isAdminAtual ? 'rebaixar para usuário comum' : 'promover a administrador';
+            if (!confirm(`Deseja ${acao} o usuário ${email}?`)) return;
+            
+            const { error } = await supabaseSistema
+                .from('usuarios_autorizados')
+                .update({ is_admin: !isAdminAtual })
+                .eq('email', email);
+            
+            if (error) { alert('Erro: ' + error.message); return; }
+            alert('✅ Permissão atualizada!');
+            carregarUsuarios();
+        };
 
+        // ============================================
+        // AUDITORIA
+        // ============================================
         async function carregarUsuariosDoHistorico() {
             const select = document.getElementById('filtroUsuario');
-            
             try {
                 const { data, error } = await supabaseSistema
                     .from('auditoria_funcionarios')
                     .select('usuario');
-                
-                if (error) {
-                    console.error('Erro ao carregar usuários do histórico:', error);
-                    return;
-                }
+                if (error) { console.error(error); return; }
                 
                 const usuariosUnicos = [...new Set((data || []).map(u => u.usuario).filter(Boolean))].sort();
-                
                 const valorAtual = select.value;
-                
                 let html = '<option value="">Todos os usuários</option>';
-                usuariosUnicos.forEach(u => {
-                    html += `<option value="${u}">${u}</option>`;
-                });
-                
+                usuariosUnicos.forEach(u => { html += `<option value="${u}">${u}</option>`; });
                 select.innerHTML = html;
-                
-                if (valorAtual && usuariosUnicos.includes(valorAtual)) {
-                    select.value = valorAtual;
-                }
-                
-                usuariosHistoricoCarregados = true;
-            } catch (err) {
-                console.error('Erro inesperado ao carregar usuários:', err);
-            }
+                if (valorAtual && usuariosUnicos.includes(valorAtual)) select.value = valorAtual;
+            } catch (err) { console.error(err); }
         }
 
         async function carregarHistorico(filtroAcao = '', filtroUsuario = '') {
@@ -1269,53 +1450,16 @@
             lista.innerHTML = '<p class="text-gray-500 text-center py-4">⏳ Carregando histórico...</p>';
             
             try {
-                let query = supabaseSistema
-                    .from('auditoria_funcionarios')
-                    .select('*')
-                    .order('data_hora', { ascending: false });
-                
-                if (filtroAcao && filtroAcao.trim() !== '') {
-                    query = query.eq('acao', filtroAcao);
-                }
-                
-                if (filtroUsuario && filtroUsuario.trim() !== '') {
-                    query = query.eq('usuario', filtroUsuario);
-                }
-                
+                let query = supabaseSistema.from('auditoria_funcionarios').select('*').order('data_hora', { ascending: false });
+                if (filtroAcao) query = query.eq('acao', filtroAcao);
+                if (filtroUsuario) query = query.eq('usuario', filtroUsuario);
                 const { data, error } = await query.limit(100);
-                
-                if (error) {
-                    console.error('Erro ao carregar histórico:', error);
-                    lista.innerHTML = `<p class="text-red-500 text-center py-4">❌ Erro ao carregar histórico: ${error.message}</p>`;
-                    return;
-                }
+                if (error) throw error;
                 
                 if (!data || data.length === 0) {
-                    let msg = 'Nenhum registro encontrado';
-                    const filtrosAtivos = [];
-                    if (filtroAcao) filtrosAtivos.push(`ação "${filtroAcao}"`);
-                    if (filtroUsuario) filtrosAtivos.push(`usuário "${filtroUsuario}"`);
-                    
-                    if (filtrosAtivos.length > 0) {
-                        msg += ` para ${filtrosAtivos.join(' e ')}.`;
-                    } else {
-                        msg += '.';
-                    }
-                    
-                    lista.innerHTML = `<p class="text-gray-400 text-center py-4">${msg}</p>`;
+                    lista.innerHTML = '<p class="text-gray-400 text-center py-4">Nenhum registro encontrado.</p>';
                     return;
                 }
-                
-                const filtrosAtivos = [];
-                if (filtroAcao) filtrosAtivos.push(filtroAcao);
-                if (filtroUsuario) filtrosAtivos.push(filtroUsuario);
-                const textoFiltros = filtrosAtivos.length > 0 
-                    ? ` - Filtros: ${filtrosAtivos.join(' + ')}` 
-                    : ' - Todos';
-                
-                let html = `<div class="mb-3 p-2 bg-blue-50 rounded-lg text-center text-sm font-semibold text-blue-700">
-                    📊 ${data.length} registro(s)${textoFiltros}
-                </div>`;
                 
                 const cores = {
                     'CADASTRO': 'bg-green-100 text-green-800',
@@ -1324,36 +1468,33 @@
                 };
                 const icones = { 'CADASTRO': '➕', 'EDIÇÃO': '✏️', 'EXCLUSÃO': '🗑️' };
                 
+                let html = `<div class="mb-3 p-2 bg-blue-50 rounded-lg text-center text-sm font-semibold text-blue-700">📊 ${data.length} registro(s)</div>`;
                 data.forEach(h => {
                     html += `
                         <div class="border p-3 rounded mb-2">
                             <div class="flex justify-between items-start">
                                 <div>
                                     <span class="px-2 py-1 rounded text-sm font-bold ${cores[h.acao] || 'bg-gray-100 text-gray-800'}">
-                                        ${icones[h.acao] || ''} ${h.acao || 'N/A'}
+                                        ${icones[h.acao] || ''} ${escaparHtml(h.acao) || 'N/A'}
                                     </span>
-                                    <span class="ml-2 font-bold">${h.nome_funcionario || '-'}</span>
+                                    <span class="ml-2 font-bold">${escaparHtml(h.nome_funcionario) || '-'}</span>
                                 </div>
                                 <span class="text-xs text-gray-500">${formatarDataHora(h.data_hora)}</span>
                             </div>
-                            <div class="text-sm text-gray-600 mt-1">👤 ${h.usuario || 'N/A'}</div>
+                            <div class="text-sm text-gray-600 mt-1">👤 ${escaparHtml(h.usuario) || 'N/A'}</div>
                         </div>
                     `;
                 });
-                
                 lista.innerHTML = html;
             } catch (err) {
-                console.error('Erro inesperado:', err);
-                lista.innerHTML = `<p class="text-red-500 text-center py-4">❌ Erro inesperado: ${err.message}</p>`;
+                console.error(err);
+                lista.innerHTML = `<p class="text-red-500 text-center py-4">❌ Erro: ${err.message}</p>`;
             }
         }
 
         document.getElementById('btnFiltrarHistorico').onclick = () => {
-            const filtroAcao = document.getElementById('filtroAcao').value;
-            const filtroUsuario = document.getElementById('filtroUsuario').value;
-            carregarHistorico(filtroAcao, filtroUsuario);
+            carregarHistorico(document.getElementById('filtroAcao').value, document.getElementById('filtroUsuario').value);
         };
-
         document.getElementById('btnLimparHistorico').onclick = () => {
             document.getElementById('filtroAcao').value = '';
             document.getElementById('filtroUsuario').value = '';
@@ -1361,18 +1502,57 @@
         };
 
         // ============================================
-        // EXPORTAR EXCEL
+        // EXPORTAR — TODOS
         // ============================================
         document.getElementById('btnExportarExcel').onclick = async () => {
             const { data, error } = await supabaseSistema.from('tblCadastro').select('*').order('"Nome Completo"');
             if (error) { alert('Erro: ' + error.message); return; }
             if (data.length === 0) { alert('Nenhum dado para exportar!'); return; }
-            
+            exportarExcel(data, 'Funcionarios_Completo');
+        };
+
+        document.getElementById('btnExportarPDF').onclick = async () => {
+            const { data, error } = await supabaseSistema.from('tblCadastro').select('*').order('"Nome Completo"');
+            if (error) { alert('Erro: ' + error.message); return; }
+            if (data.length === 0) { alert('Nenhum dado para exportar!'); return; }
+            exportarPDF(data, 'Relatorio_Completo');
+        };
+
+        // ============================================
+        // EXPORTAR — RESULTADO ATUAL (com filtros aplicados)
+        // ============================================
+        document.getElementById('btnExportarResultadoExcel').onclick = async () => {
+            try {
+                let query = supabaseSistema.from('tblCadastro').select('*');
+                query = aplicarFiltrosQuery(query);
+                query = query.order('"Nome Completo"');
+                const { data, error } = await query;
+                if (error) throw error;
+                if (!data || data.length === 0) { alert('Nenhum resultado para exportar!'); return; }
+                exportarExcel(data, 'Funcionarios_Filtrado');
+            } catch (err) {
+                alert('❌ Erro: ' + err.message);
+            }
+        };
+
+        document.getElementById('btnExportarResultadoPDF').onclick = async () => {
+            try {
+                let query = supabaseSistema.from('tblCadastro').select('*');
+                query = aplicarFiltrosQuery(query);
+                query = query.order('"Nome Completo"');
+                const { data, error } = await query;
+                if (error) throw error;
+                if (!data || data.length === 0) { alert('Nenhum resultado para exportar!'); return; }
+                exportarPDF(data, 'Relatorio_Filtrado');
+            } catch (err) {
+                alert('❌ Erro: ' + err.message);
+            }
+        };
+
+        function exportarExcel(data, prefixoArquivo) {
             const dadosExport = data.map(f => {
                 const novo = { ...f };
-                if (novo['Data de Nascimento']) {
-                    novo['Data de Nascimento'] = formatarData(novo['Data de Nascimento']);
-                }
+                if (novo['Data de Nascimento']) novo['Data de Nascimento'] = formatarData(novo['Data de Nascimento']);
                 return novo;
             });
             
@@ -1380,20 +1560,12 @@
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, 'Funcionários');
             const colunas = Object.keys(dadosExport[0] || {});
-            const colWidths = colunas.map(c => ({ wch: Math.max(c.length * 2, 15) }));
-            ws['!cols'] = colWidths;
-            XLSX.writeFile(wb, `Funcionarios_${new Date().toISOString().split('T')[0]}.xlsx`);
+            ws['!cols'] = colunas.map(c => ({ wch: Math.max(c.length * 2, 15) }));
+            XLSX.writeFile(wb, `${prefixoArquivo}_${new Date().toISOString().split('T')[0]}.xlsx`);
             alert('✅ Excel exportado com sucesso!');
-        };
+        }
 
-        // ============================================
-        // EXPORTAR PDF
-        // ============================================
-        document.getElementById('btnExportarPDF').onclick = async () => {
-            const { data, error } = await supabaseSistema.from('tblCadastro').select('*').order('"Nome Completo"');
-            if (error) { alert('Erro: ' + error.message); return; }
-            if (data.length === 0) { alert('Nenhum dado para exportar!'); return; }
-            
+        function exportarPDF(data, prefixoArquivo) {
             let html = `<h1 style="text-align:center;font-size:24px;margin-bottom:20px;">📋 Relatório de Funcionários</h1><p style="text-align:center;color:#666;">Gerado em ${new Date().toLocaleString('pt-BR')}</p><p style="text-align:center;color:#666;">Total: ${data.length} funcionários</p><hr><table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:20px;"><thead><tr>`;
             const cabecalhos = ['Nome Completo', 'Unidade Escolar', 'Função', 'E-mail', 'Telefone para Contato', 'Cargo/Situação'];
             cabecalhos.forEach(c => { html += `<th style="border:1px solid #999;padding:6px;background:#f0f0f0;">${c}</th>`; });
@@ -1401,8 +1573,7 @@
             data.forEach(f => {
                 html += '<tr>';
                 cabecalhos.forEach(c => {
-                    const valor = f[c] || '-';
-                    html += `<td style="border:1px solid #ccc;padding:5px;">${valor}</td>`;
+                    html += `<td style="border:1px solid #ccc;padding:5px;">${escaparHtml(f[c]) || '-'}</td>`;
                 });
                 html += '</tr>';
             });
@@ -1410,9 +1581,9 @@
             
             const div = document.getElementById('relatorioPDF');
             div.innerHTML = html;
-            const opt = { margin: 10, filename: `Relatorio_Funcionarios_${new Date().toISOString().split('T')[0]}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } };
+            const opt = { margin: 10, filename: `${prefixoArquivo}_${new Date().toISOString().split('T')[0]}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } };
             html2pdf().set(opt).from(div).save().then(() => { div.innerHTML = ''; });
-        };
+        }
 
         // ============================================
         // FOTO - CADASTRO
@@ -1488,32 +1659,19 @@
             };
             
             const { error } = await supabaseSistema.from('tblCadastro').insert([dados]);
-            if (error) {
-                alert('❌ Erro: ' + error.message);
-                return;
-            }
+            if (error) { alert('❌ Erro: ' + error.message); return; }
             
             if (documentosTemp.length > 0) {
-                try {
-                    for (const doc of documentosTemp) {
-                        const { error: docError } = await supabaseSistema
-                            .from('tblDocumentos')
-                            .insert([{
-                                cadastro_nome: nomeCompleto,
-                                tipo_documento: doc.tipo_documento,
-                                descricao: doc.descricao,
-                                nome_arquivo: doc.nome_arquivo,
-                                url_arquivo: doc.url_arquivo,
-                                tamanho_arquivo: doc.tamanho_arquivo,
-                                tipo_arquivo: doc.tipo_arquivo
-                            }]);
-                        
-                        if (docError) {
-                            console.error('Erro ao salvar documento:', docError);
-                        }
-                    }
-                } catch (docError) {
-                    console.error('Erro ao salvar documentos:', docError);
+                for (const doc of documentosTemp) {
+                    await supabaseSistema.from('tblDocumentos').insert([{
+                        cadastro_nome: nomeCompleto,
+                        tipo_documento: doc.tipo_documento,
+                        descricao: doc.descricao,
+                        nome_arquivo: doc.nome_arquivo,
+                        url_arquivo: doc.url_arquivo,
+                        tamanho_arquivo: doc.tamanho_arquivo,
+                        tipo_arquivo: doc.tipo_arquivo
+                    }]);
                 }
             }
             
@@ -1523,12 +1681,9 @@
             document.getElementById('previewFotoCadastro').classList.add('hidden');
             document.getElementById('foto').value = '';
             arquivoSelecionado = null;
-            
             documentosTemp = [];
             atualizarListaDocumentosCadastro();
-            
             carregarDashboard();
-            carregarTodosFuncionarios();
         };
 
         // ============================================
