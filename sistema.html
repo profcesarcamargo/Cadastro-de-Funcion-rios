@@ -22,6 +22,15 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
+        /* ✅ AJUSTE DE SCROLL GLOBAL */
+        html, body {
+            height: 100%;
+            overflow-y: auto;
+            overflow-x: hidden;
+            margin: 0;
+        }
+        body { scroll-behavior: smooth; }
+
         .stat-card { transition: transform 0.2s; }
         .stat-card:hover { transform: translateY(-5px); }
         @media print { .no-print { display: none; } }
@@ -412,7 +421,6 @@
             return data.toLocaleString('pt-BR');
         }
 
-        // Aguarda uma imagem carregar (útil para html2canvas)
         function aguardarImagem(src) {
             return new Promise((resolve) => {
                 if (!src) { resolve(); return; }
@@ -769,6 +777,12 @@
             btnUsuarios.className = btnClassDefault;
             btnAuditoria.className = btnClassDefault;
             
+            // ✅ Ao trocar de aba, sempre desconecta o observer para não disparar oculto
+            if (observerScroll) {
+                observerScroll.disconnect();
+                observerScroll = null;
+            }
+            
             if (aba === 'dashboard') {
                 abaDashboard.style.display = 'block';
                 btnDashboard.className = 'bg-purple-500 text-white px-6 py-3 rounded-lg font-semibold';
@@ -780,6 +794,8 @@
                 abaBusca.style.display = 'block';
                 btnBusca.className = btnClassActive;
                 resetarScrollERecarregar();
+                // ✅ Reconfigura observer após aba ficar visível
+                setTimeout(() => configurarObserverScroll(), 200);
             } else if (aba === 'usuarios') {
                 abaUsuarios.style.display = 'block';
                 btnUsuarios.className = btnClassActive;
@@ -940,7 +956,7 @@
         }
 
         // ============================================
-        // SCROLL INFINITO — CONTROLE
+        // SCROLL INFINITO — CONTROLE (CORRIGIDO)
         // ============================================
         function aplicarFiltrosQuery(query) {
             if (filtrosAtivos.nome) query = query.ilike('"Nome Completo"', `%${filtrosAtivos.nome}%`);
@@ -954,9 +970,17 @@
             funcionariosCarregados = [];
             offsetAtual = 0;
             temMaisFuncionarios = true;
+            carregandoMais = false; // ✅ garante reset do estado
             document.getElementById('listaFuncionarios').innerHTML = '';
             document.getElementById('fimLista').classList.add('hidden');
             document.getElementById('totalResultados').innerHTML = '0 funcionário(s)';
+            
+            // ✅ desconecta observer antigo antes de recarregar
+            if (observerScroll) {
+                observerScroll.disconnect();
+                observerScroll = null;
+            }
+            
             carregarMaisFuncionarios();
         }
 
@@ -997,7 +1021,8 @@
             } finally {
                 carregandoMais = false;
                 loading.classList.add('hidden');
-                configurarObserverScroll();
+                // ✅ Recria o observer sempre após o carregamento
+                setTimeout(() => configurarObserverScroll(), 100);
             }
         }
 
@@ -1023,17 +1048,44 @@
         }
 
         function configurarObserverScroll() {
+            // ✅ Só observa se a aba de busca está visível
+            if (abaBusca.style.display === 'none') return;
+            if (!temMaisFuncionarios) return;
+            if (carregandoMais) return;
+            
             if (observerScroll) observerScroll.disconnect();
+            
             const sentinela = document.getElementById('loadingScroll');
+            if (!sentinela) return;
+            
             observerScroll = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
                     if (entry.isIntersecting && temMaisFuncionarios && !carregandoMais) {
                         carregarMaisFuncionarios();
                     }
                 });
-            }, { rootMargin: '200px' });
+            }, { 
+                root: null,
+                rootMargin: '400px',
+                threshold: 0 
+            });
             observerScroll.observe(sentinela);
         }
+
+        // ✅ FALLBACK: scroll também via evento (caso o observer falhe)
+        window.addEventListener('scroll', () => {
+            if (abaBusca.style.display === 'none') return;
+            if (!temMaisFuncionarios || carregandoMais) return;
+            
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            const windowHeight = window.innerHeight;
+            const docHeight = document.documentElement.scrollHeight;
+            
+            // Se estiver a menos de 500px do fim, carrega mais
+            if (scrollTop + windowHeight >= docHeight - 500) {
+                carregarMaisFuncionarios();
+            }
+        }, { passive: true });
 
         // ============================================
         // BUSCA
@@ -1820,7 +1872,6 @@
 
     <!-- PWA - Registro do Service Worker -->
     <script>
-        // Registra o Service Worker (necessário para PWA)
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('/sw.js')
@@ -1829,7 +1880,6 @@
             });
         }
 
-        // Detecta se o app foi instalado
         window.addEventListener('appinstalled', () => {
             console.log('✅ PWA: App instalado com sucesso!');
         });
