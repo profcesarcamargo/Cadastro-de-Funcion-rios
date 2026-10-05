@@ -235,13 +235,7 @@
                 </div>
                 <div class="flex justify-between items-center mb-4"><h3 class="text-lg font-semibold">📊 Resultados</h3><span id="totalResultados" class="text-sm text-gray-600">0 funcionário(s)</span></div>
                 <div id="listaFuncionarios" class="space-y-4"></div>
-                <div id="loadingScroll" class="hidden text-center py-6 text-gray-500">
-                    <span class="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></span>
-                    <p class="mt-2 text-sm">Carregando mais funcionários...</p>
-                </div>
-                <div id="fimLista" class="hidden text-center py-6 text-gray-400 text-sm">
-                    ✅ Todos os funcionários foram carregados.
-                </div>
+                <!-- Removido o loadingScroll e fimLista, pois agora carrega tudo de uma vez -->
             </div>
         </div>
 
@@ -394,15 +388,10 @@
         let editArquivoSelecionado = null;
 
         // ============================================
-        // SCROLL INFINITO - VARIÁVEIS DE ESTADO
+        // VARIÁVEIS DE ESTADO DA BUSCA (SIMPLIFICADO)
         // ============================================
-        const PAGE_SIZE = 20;
         let funcionariosCarregados = [];
-        let offsetAtual = 0;
-        let carregandoMais = false;
-        let temMaisFuncionarios = true;
         let filtrosAtivos = { nome: '', unidade: '', funcao: '', email: '' };
-        let observerScroll = null;
         let nomeFuncionarioAberto = null;
 
         // ============================================
@@ -777,12 +766,6 @@
             btnUsuarios.className = btnClassDefault;
             btnAuditoria.className = btnClassDefault;
             
-            // ✅ Ao trocar de aba, sempre desconecta o observer para não disparar oculto
-            if (observerScroll) {
-                observerScroll.disconnect();
-                observerScroll = null;
-            }
-            
             if (aba === 'dashboard') {
                 abaDashboard.style.display = 'block';
                 btnDashboard.className = 'bg-purple-500 text-white px-6 py-3 rounded-lg font-semibold';
@@ -793,9 +776,8 @@
             } else if (aba === 'busca') {
                 abaBusca.style.display = 'block';
                 btnBusca.className = btnClassActive;
-                resetarScrollERecarregar();
-                // ✅ Reconfigura observer após aba ficar visível
-                setTimeout(() => configurarObserverScroll(), 200);
+                // ✅ Carrega todos os funcionários ao entrar na aba
+                carregarTodosFuncionarios();
             } else if (aba === 'usuarios') {
                 abaUsuarios.style.display = 'block';
                 btnUsuarios.className = btnClassActive;
@@ -956,7 +938,7 @@
         }
 
         // ============================================
-        // SCROLL INFINITO — CONTROLE (CORRIGIDO)
+        // BUSCA - NOVA LÓGICA (CARREGA TUDO DE UMA VEZ)
         // ============================================
         function aplicarFiltrosQuery(query) {
             if (filtrosAtivos.nome) query = query.ilike('"Nome Completo"', `%${filtrosAtivos.nome}%`);
@@ -966,63 +948,38 @@
             return query;
         }
 
-        function resetarScrollERecarregar() {
-            funcionariosCarregados = [];
-            offsetAtual = 0;
-            temMaisFuncionarios = true;
-            carregandoMais = false; // ✅ garante reset do estado
-            document.getElementById('listaFuncionarios').innerHTML = '';
-            document.getElementById('fimLista').classList.add('hidden');
-            document.getElementById('totalResultados').innerHTML = '0 funcionário(s)';
+        // Função principal que carrega todos os funcionários de uma vez
+        async function carregarTodosFuncionarios() {
+            const container = document.getElementById('listaFuncionarios');
+            const totalSpan = document.getElementById('totalResultados');
             
-            // ✅ desconecta observer antigo antes de recarregar
-            if (observerScroll) {
-                observerScroll.disconnect();
-                observerScroll = null;
-            }
-            
-            carregarMaisFuncionarios();
-        }
+            // Mostra um feedback de carregamento
+            container.innerHTML = '<div class="text-center py-8 text-gray-500">⏳ Carregando todos os funcionários...</div>';
+            totalSpan.innerHTML = 'Carregando...';
 
-        async function carregarMaisFuncionarios() {
-            if (carregandoMais || !temMaisFuncionarios) return;
-            carregandoMais = true;
-            
-            const loading = document.getElementById('loadingScroll');
-            loading.classList.remove('hidden');
-            
             try {
-                let query = supabaseSistema
-                    .from('tblCadastro')
-                    .select('*', { count: 'exact' });
+                let query = supabaseSistema.from('tblCadastro').select('*');
                 query = aplicarFiltrosQuery(query);
-                query = query.order('"Nome Completo"').range(offsetAtual, offsetAtual + PAGE_SIZE - 1);
+                // Ordena alfabeticamente
+                query = query.order('"Nome Completo"');
                 
+                // Executa a query SEM LIMITE de linhas
                 const { data, error, count } = await query;
+                
                 if (error) throw error;
+
+                funcionariosCarregados = data || [];
                 
-                const novos = data || [];
-                funcionariosCarregados = funcionariosCarregados.concat(novos);
-                offsetAtual += novos.length;
-                
+                // Renderiza todos os funcionários
                 renderizarFuncionarios();
                 
-                document.getElementById('totalResultados').innerHTML = `${funcionariosCarregados.length} de ${count || funcionariosCarregados.length} funcionário(s)`;
-                
-                if (novos.length < PAGE_SIZE) {
-                    temMaisFuncionarios = false;
-                    document.getElementById('fimLista').classList.remove('hidden');
-                } else {
-                    document.getElementById('fimLista').classList.add('hidden');
-                }
+                // Atualiza o contador
+                totalSpan.innerHTML = `${funcionariosCarregados.length} funcionário(s) encontrado(s)`;
+
             } catch (err) {
                 console.error('Erro ao carregar funcionários:', err);
-                alert('❌ Erro ao carregar funcionários: ' + err.message);
-            } finally {
-                carregandoMais = false;
-                loading.classList.add('hidden');
-                // ✅ Recria o observer sempre após o carregamento
-                setTimeout(() => configurarObserverScroll(), 100);
+                container.innerHTML = `<p class="text-red-500 text-center py-8">❌ Erro ao carregar funcionários: ${err.message}</p>`;
+                totalSpan.innerHTML = 'Erro';
             }
         }
 
@@ -1047,48 +1004,8 @@
             container.innerHTML = funcionariosCarregados.map(montarCardFuncionario).join('');
         }
 
-        function configurarObserverScroll() {
-            // ✅ Só observa se a aba de busca está visível
-            if (abaBusca.style.display === 'none') return;
-            if (!temMaisFuncionarios) return;
-            if (carregandoMais) return;
-            
-            if (observerScroll) observerScroll.disconnect();
-            
-            const sentinela = document.getElementById('loadingScroll');
-            if (!sentinela) return;
-            
-            observerScroll = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting && temMaisFuncionarios && !carregandoMais) {
-                        carregarMaisFuncionarios();
-                    }
-                });
-            }, { 
-                root: null,
-                rootMargin: '400px',
-                threshold: 0 
-            });
-            observerScroll.observe(sentinela);
-        }
-
-        // ✅ FALLBACK: scroll também via evento (caso o observer falhe)
-        window.addEventListener('scroll', () => {
-            if (abaBusca.style.display === 'none') return;
-            if (!temMaisFuncionarios || carregandoMais) return;
-            
-            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-            const windowHeight = window.innerHeight;
-            const docHeight = document.documentElement.scrollHeight;
-            
-            // Se estiver a menos de 500px do fim, carrega mais
-            if (scrollTop + windowHeight >= docHeight - 500) {
-                carregarMaisFuncionarios();
-            }
-        }, { passive: true });
-
         // ============================================
-        // BUSCA
+        // EVENTOS DE BUSCA
         // ============================================
         document.getElementById('btnBuscarFunc').onclick = () => {
             filtrosAtivos = {
@@ -1097,7 +1014,7 @@
                 funcao: document.getElementById('buscaFuncao').value.trim(),
                 email: document.getElementById('buscaEmail').value.trim()
             };
-            resetarScrollERecarregar();
+            carregarTodosFuncionarios();
         };
 
         document.getElementById('btnCarregarTodos').onclick = () => {
@@ -1106,7 +1023,7 @@
             document.getElementById('buscaUnidade').value = '';
             document.getElementById('buscaFuncao').value = '';
             document.getElementById('buscaEmail').value = '';
-            resetarScrollERecarregar();
+            carregarTodosFuncionarios();
         };
 
         document.getElementById('btnLimparBuscaFunc').onclick = () => {
@@ -1115,7 +1032,7 @@
             document.getElementById('buscaUnidade').value = '';
             document.getElementById('buscaFuncao').value = '';
             document.getElementById('buscaEmail').value = '';
-            resetarScrollERecarregar();
+            carregarTodosFuncionarios();
         };
 
         // ============================================
@@ -1340,7 +1257,7 @@
             
             await registrarAuditoria('EXCLUSÃO', nome, dadosAntigos, null);
             alert('✅ Funcionário excluído com sucesso!');
-            resetarScrollERecarregar();
+            carregarTodosFuncionarios();
             carregarDashboard();
         };
 
@@ -1471,7 +1388,7 @@
             await registrarAuditoria('EDIÇÃO', dadosNovos['Nome Completo'], dadosAntigos, dadosNovos);
             alert('✅ Funcionário atualizado com sucesso!');
             fecharModalEdicao();
-            resetarScrollERecarregar();
+            carregarTodosFuncionarios();
             carregarDashboard();
         };
 
