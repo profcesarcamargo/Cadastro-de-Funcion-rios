@@ -68,7 +68,7 @@
                         <p class="text-sm text-gray-600">Bem-vindo, <span id="nomeUsuario"></span></p>
                         <p class="text-xs text-blue-600" id="statusAdmin"></p>
                     </div>
-                    <img id="logoSantaBranca" src="https://ndvgduxdebeiyujfrups.supabase.co/storage/v1/object/public/imagens/Santa%20Branca%20Logo.png" alt="Santa Branca Logo" class="h-16 w-auto object-contain">
+                    <img id="logoSantaBranca" src="https://lklqwzdzcuknjsowarvz.supabase.co/storage/v1/object/public/imagens/Santa%20Branca%20Logo.png" alt="Santa Branca Logo" class="h-16 w-auto object-contain">
                 </div>
                 <div class="flex gap-2">
                     <button id="btnExportarExcel" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">📊 Exportar Excel</button>
@@ -376,8 +376,11 @@
     <div class="pdf-container" id="fichaIndividualPDF"></div>
 
     <script>
-        const SUPABASE_URL = 'https://ndvgduxdebeiyujfrups.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kdmdkdXhkZWJlaXl1amZydXBzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4NzM4MzgsImV4cCI6MjA5MzQ0OTgzOH0.G7fWT-Ys6RLif0ce8zuHbjqbDUm6jOd8oxa9dSjPtg8';
+        // ============================================
+        // ⚠️ CONFIGURAÇÃO SUPABASE - AJUSTADA PARA O MESMO PROJETO DO INDEX.HTML
+        // ============================================
+        const SUPABASE_URL = 'https://lklqwzdzcuknjsowarvz.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_zmY4GOyhHbBVgyAK7vpXhw_8M-Y3XHP';
         
         const supabaseSistema = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         let emailLogado = '';
